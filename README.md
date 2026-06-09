@@ -60,7 +60,8 @@ El proyecto usa Drizzle ORM para gestionar las migraciones. Las migraciones est√
 
 Para aplicar las migraciones a tu base de datos:
 ```bash
-npx drizzle-kit push
+npm run db:create
+npm run db:migrate
 ```
 
 Esto sincronizar√° el esquema de la base de datos con el archivo `src/lib/db/schema.ts`.

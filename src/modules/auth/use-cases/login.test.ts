@@ -1,6 +1,7 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { LoginUseCase } from './login.js';
 import type { IAuthRepository } from '../auth.repository.js';
+import bcrypt from 'bcryptjs';
 
 class MockAuthRepository implements IAuthRepository {
   private users: any[] = [];
@@ -21,10 +22,11 @@ class MockAuthRepository implements IAuthRepository {
 describe('LoginUseCase', () => {
   it('should return user data when credentials are correct', async () => {
     const mockRepo = new MockAuthRepository();
+    const passwordHash = await bcrypt.hash('password123', 10);
     mockRepo.addUser({
       id: '123',
       username: 'admin',
-      passwordHash: '$2a$10$hashedpassword',
+      passwordHash,
       role: 'ADMINISTRADOR',
       isActive: true,
       createdAt: new Date(),
@@ -57,10 +59,11 @@ describe('LoginUseCase', () => {
 
   it('should return 401 when password is incorrect', async () => {
     const mockRepo = new MockAuthRepository();
+    const passwordHash = await bcrypt.hash('correctpassword', 10);
     mockRepo.addUser({
       id: '123',
       username: 'admin',
-      passwordHash: '$2a$10$wronghash',
+      passwordHash,
       role: 'ADMINISTRADOR',
       isActive: true,
       createdAt: new Date(),

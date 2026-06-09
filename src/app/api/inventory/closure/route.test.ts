@@ -1,5 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
+// Mock revalidatePath
+vi.mock('next/cache', () => ({
+  revalidatePath: vi.fn(),
+}));
+
 // Mock the DrizzleInventoryRepository
 class MockDrizzleInventoryRepository {
   private initialStockValue: number = 0;
@@ -24,6 +29,24 @@ class MockDrizzleInventoryRepository {
 
   async hasExistingClosure(productId: number, date: Date): Promise<boolean> {
     return this.hasExistingValue;
+  }
+
+  async getLatestPhysicalStock(productId: number): Promise<number> {
+    return this.initialStockValue + this.totalEntriesValue;
+  }
+
+  async getLatestPhysicalStockForAllProducts(): Promise<Map<number, number>> {
+    const map = new Map();
+    map.set(1, this.initialStockValue + this.totalEntriesValue);
+    return map;
+  }
+
+  async providerExists(providerId: number): Promise<boolean> {
+    return true;
+  }
+
+  async productExists(productId: number): Promise<boolean> {
+    return true;
   }
 
   setInitialStock(value: number) {

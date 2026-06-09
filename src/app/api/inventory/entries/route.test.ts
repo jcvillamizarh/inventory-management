@@ -1,6 +1,11 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { checkRolePermission } from '../../../../lib/auth/middleware.js';
 
+// Mock revalidatePath
+vi.mock('next/cache', () => ({
+  revalidatePath: vi.fn(),
+}));
+
 // Mock the DrizzleInventoryRepository
 class MockDrizzleInventoryRepository {
   private entries: any[] = [];
@@ -9,10 +14,35 @@ class MockDrizzleInventoryRepository {
     const newEntry = {
       id: this.entries.length + 1,
       createdAt: new Date(),
+      quantityUnits: typeof entry.quantityUnits === 'string' ? parseFloat(entry.quantityUnits) : entry.quantityUnits,
       ...entry,
     };
     this.entries.push(newEntry);
     return newEntry;
+  }
+
+  async getInitialStock(productId: number, date: Date): Promise<number> {
+    return 0;
+  }
+
+  async getTotalEntriesForDay(productId: number, date: Date): Promise<number> {
+    return 0;
+  }
+
+  async saveClosure(closure: any): Promise<any> {
+    return { id: 1, ...closure };
+  }
+
+  async hasExistingClosure(productId: number, date: Date): Promise<boolean> {
+    return false;
+  }
+
+  async getLatestPhysicalStock(productId: number): Promise<number> {
+    return 0;
+  }
+
+  async getLatestPhysicalStockForAllProducts(): Promise<Map<number, number>> {
+    return new Map();
   }
 
   async providerExists(providerId: number): Promise<boolean> {
