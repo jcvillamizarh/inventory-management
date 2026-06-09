@@ -40,26 +40,59 @@ El proyecto se organiza en **módulos independientes por contexto de negocio**. 
 src/
 ├── app/                      # CAPA DE ENTREGA (Next.js App Router)
 │   ├── page.tsx              # Pantalla de Login
-│   ├── dashboard/            # Interfaces de Usuario (Admin, Operador, Consulta)
+│   ├── dashboard/            # Interfaces de Usuario (Admin, Consulta)
+│   │   ├── page.tsx          # Dashboard principal
+│   │   ├── closure/          # Cierre diario
+│   │   ├── admin/            # Administración
+│   │   └── reports/          # Reportes (Alertas, Inventario General)
 │   └── api/                  # CONTROLADORES (API Routes - HTTP)
-│       └── inventory/
-│           └── route.ts      # Instancia el Repositorio, el Caso de Uso y ejecuta
+│       ├── auth/             # Autenticación
+│       ├── inventory/        # Entradas y Cierres
+│       ├── products/         # Catálogo de productos
+│       ├── providers/        # Catálogo de proveedores
+│       └── reports/          # Reportes de inventario
 │
 ├── modules/                  # NÚCLEO DEL NEGOCIO MODULAR
-│   ├── users/                # Módulo de Autenticación y Cuentas
+│   ├── auth/                 # Módulo de Autenticación
+│   │   ├── auth.repository.ts
+│   │   ├── use-cases/
+│   │   └── infrastructure/
+│   │
+│   ├── users/                # Módulo de Usuarios
+│   │   ├── users.repository.ts
+│   │   ├── use-cases/
+│   │   └── infrastructure/
+│   │
 │   ├── products/             # Catálogo de Insumos y Productos
-│   └── inventory/            # Módulo de Movimientos (Entradas y Cierres)
-│       │
-│       ├── inventory.repository.ts # CONTRATO: Interface de operaciones de datos
-│       │
-│       ├── use-cases/        # CASOS DE USO (Lógica Pura de Negocio)
-│       │   ├── register-entry.ts    # Caso de Uso: Ingreso matutino
-│       │   ├── process-closure.ts   # Caso de Uso: Balance y consumo nocturno
-│       │   └── process-closure.test.ts # Pruebas unitarias TDD del caso de uso
-│       │
-│       └── infrastructure/   # INFRAESTRUCTURA (Acoplado a la tecnología actual)
-│           ├── inventory.drizzle.ts # Implementación del Repositorio usando Drizzle
-│           └── inventory.schema.ts  # Definición de tablas de PostgreSQL
+│   │   ├── products.repository.ts
+│   │   ├── use-cases/
+│   │   └── infrastructure/
+│   │
+│   ├── providers/            # Catálogo de Proveedores
+│   │   ├── providers.repository.ts
+│   │   ├── use-cases/
+│   │   └── infrastructure/
+│   │
+│   ├── inventory/           # Módulo de Movimientos (Entradas y Cierres)
+│   │   ├── inventory.repository.ts # CONTRATO: Interface de operaciones de datos
+│   │   ├── use-cases/        # CASOS DE USO (Lógica Pura de Negocio)
+│   │   │   ├── register-entry.ts    # Caso de Uso: Ingreso matutino
+│   │   │   ├── process-closure.ts   # Caso de Uso: Balance y consumo nocturno
+│   │   │   └── *.test.ts            # Pruebas unitarias TDD
+│   │   └── infrastructure/   # INFRAESTRUCTURA (Acoplado a la tecnología actual)
+│   │       ├── inventory.drizzle.ts # Implementación del Repositorio usando Drizzle
+│   │       └── inventory.schema.ts  # Definición de tablas de PostgreSQL
+│   │
+│   └── reports/              # Módulo de Reportes
+│       ├── reports.repository.ts
+│       ├── use-cases/
+│       │   ├── general-inventory-report.ts
+│       │   └── stock-alerts.ts
+│       └── infrastructure/
+│           └── reports.drizzle.ts
 │
-├── shared/                   # Componentes visuales y utilidades criptográficas comunes
 └── lib/                      # Conexión base e inicialización de Drizzle
+    ├── db/
+    │   ├── index.ts         # Conexión a PostgreSQL
+    │   └── schema.ts        # Esquema de base de datos
+    └── utils/               # Utilidades comunes

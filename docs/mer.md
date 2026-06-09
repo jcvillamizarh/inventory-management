@@ -29,11 +29,9 @@ Almacena las credenciales cifradas y los privilegios de acceso del personal.
 | `id` | `UUID` | `PRIMARY KEY`, `DEFAULT gen_random_uuid()` | Identificador único global de la cuenta. |
 | `username` | `VARCHAR(50)` | `NOT NULL`, `UNIQUE` | Nombre de usuario único para inicio de sesión. |
 | `password_hash` | `VARCHAR(255)` | `NOT NULL` | Contraseña hasheada con Bcrypt (OWASP). |
-| `role` | `VARCHAR(20)` | `NOT NULL` | Enum verificado: `ADMINISTRADOR`, `OPERADOR`, `CONSULTA`. |
+| `role` | `VARCHAR(20)` | `NOT NULL` | Enum: `ADMINISTRADOR`, `CONSULTA`. |
 | `is_active` | `BOOLEAN` | `DEFAULT TRUE` | Permite deshabilitar usuarios sin borrar su histórico. |
 | `created_at` | `TIMESTAMP` | `DEFAULT CURRENT_TIMESTAMP` | Fecha de creación del registro. |
-
-* **Constraint Check:** `CONSTRAINT chk_role CHECK (role IN ('ADMINISTRADOR', 'OPERADOR', 'CONSULTA'))`
 
 ---
 
@@ -44,9 +42,10 @@ Catálogo centralizado de proveedores administrado exclusivamente por el rol Adm
 | Campo | Tipo de Dato | Restricciones | Descripción |
 | :--- | :--- | :--- | :--- |
 | `id` | `SERIAL` | `PRIMARY KEY` | ID numérico autoincremental. |
-| `nit_cedula` | `VARCHAR(20)` | `NOT NULL`, `UNIQUE` | Documento de identificación fiscal o cédula. |
+| `nit_cedula` | `VARCHAR(20)` | `NULL`, `UNIQUE` | Documento de identificación fiscal o cédula. |
 | `name` | `VARCHAR(100)` | `NOT NULL` | Razón social o nombre comercial. |
 | `phone` | `VARCHAR(20)` | `NULL` | Teléfono de contacto. |
+| `address` | `VARCHAR(200)` | `NULL` | Dirección física del proveedor. |
 | `created_at` | `TIMESTAMP` | `DEFAULT CURRENT_TIMESTAMP` | Registro de auditoría temporal. |
 
 ---
@@ -59,22 +58,24 @@ Catálogo general de insumos y productos terminados del negocio.
 | :--- | :--- | :--- | :--- |
 | `id` | `SERIAL` | `PRIMARY KEY` | ID numérico autoincremental. |
 | `name` | `VARCHAR(100)` | `NOT NULL`, `UNIQUE` | Nombre único (ej. "Harina de Trigo Haz de Oros"). |
-| `category` | `VARCHAR(20)` | `NOT NULL` | Enum: `MATERIA_PRIMA`, `PRODUCTO_TERMINADO`. |
+| `category` | `VARCHAR(25)` | `NOT NULL` | Enum: `MATERIA_PRIMA`, `PRODUCTO_TERMINADO`, `MATERIAL_DE_EMPAQUE`, `PRODUCTOS_L_D`. |
 | `type` | `VARCHAR(20)` | `NOT NULL` | Enum: `SECO_NO_PERECEDERO`, `PERECEDERO`. |
-| `unit_base` | `VARCHAR(20)` | `NOT NULL` | Enum: `KILOGRAMOS`, `LITROS`, `UNIDADES`. |
+| `unit_base` | `VARCHAR(20)` | `NOT NULL` | Enum: `KILOGRAMOS`, `LITROS`, `UNIDADES`, `GRAMOS`, `MILILITROS`. |
 | `stock_minimo` | `NUMERIC(10,2)`| `NULL` | Umbral de alerta. Obligatorio si type es SECO. |
+| `presentation_quantity` | `NUMERIC(10,2)`| `NOT NULL` | Cantidad por unidad de presentación. |
 
 * **Constraints Check:**
-  * `CONSTRAINT chk_category CHECK (category IN ('MATERIA_PRIMA', 'PRODUCTO_TERMINADO'))`
+  * `CONSTRAINT chk_category CHECK (category IN ('MATERIA_PRIMA', 'PRODUCTO_TERMINADO', 'MATERIAL_DE_EMPAQUE', 'PRODUCTOS_L_D'))`
   * `CONSTRAINT chk_type CHECK (type IN ('SECO_NO_PERECEDERO', 'PERECEDERO'))`
-  * `CONSTRAINT chk_unit CHECK (unit_base IN ('KILOGRAMOS', 'LITROS', 'UNIDADES'))`
-  * `CONSTRAINT chk_stock_minimo CHECK ((type = 'SECO_NO_PERECEDERO' AND stock_minimo IS NOT NULL) OR (type = 'PERECEDERO' AND stock_minimo IS NULL))`
+  * `CONSTRAINT chk_unit CHECK (unit_base IN ('KILOGRAMOS', 'LITROS', 'UNIDADES', 'GRAMOS', 'MILILITROS'))`
+  * `CONSTRAINT chk_stock_minimo CHECK ((type = 'SECO_NO_PERECEDERO' AND stock_minimo IS NOT NULL AND stock_minimo > 0) OR (type = 'PERECEDERO' AND stock_minimo IS NULL))`
+  * `CONSTRAINT chk_presentation_quantity CHECK (presentation_quantity > 0)`
 
 ---
 
-### Tabla: `inventory_entries` (Entradas de la Mañana)
+### Tabla: `inventory_entries` (Entradas de Inventario)
 
-Registra cada lote de insumos que ingresa al negocio, aplicando el cálculo de conversión de empaques a unidades base.
+Registra cada lote de insumos que ingresa al negocio con control de lote y fecha de vencimiento.
 
 | Campo | Tipo de Dato | Restricciones | Descripción |
 | :--- | :--- | :--- | :--- |
@@ -82,11 +83,10 @@ Registra cada lote de insumos que ingresa al negocio, aplicando el cálculo de c
 | `provider_id` | `INT` | `FOREIGN KEY REFERENCES providers(id)` | Proveedor que despacha la mercancía. |
 | `product_id` | `INT` | `FOREIGN KEY REFERENCES products(id)` | Producto que ingresa. |
 | `user_id` | `UUID` | `FOREIGN KEY REFERENCES users(id)` | Operador/Admin que digita la entrada. |
-| `package_quantity`| `INT` | `NOT NULL` | Cantidad de empaques (ej. 9 paquetes). |
-| `package_content` | `NUMERIC(10,2)`| `NOT NULL` | Contenido de cada empaque (ej. 2.0 kg). |
-| `total_base_qty`  | `NUMERIC(10,2)`| `NOT NULL` | Calculado por Backend (`package_quantity` * `package_content`). |
-| `net_cost` | `NUMERIC(12,2)`| `NOT NULL` | Costo total facturado para este producto. |
 | `entry_date` | `DATE` | `DEFAULT CURRENT_DATE` | Fecha contable de la transacción. |
+| `expiration_date` | `DATE` | `NOT NULL` | Fecha de vencimiento del lote. |
+| `batch_number` | `VARCHAR(50)` | `NOT NULL` | Número de lote del producto. |
+| `quantity_units` | `NUMERIC(10,2)`| `NOT NULL` | Cantidad en unidades base. |
 | `created_at` | `TIMESTAMP` | `DEFAULT CURRENT_TIMESTAMP` | Sello de tiempo del servidor. |
 
 ---
@@ -120,30 +120,36 @@ CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     username VARCHAR(50) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
-    role VARCHAR(20) NOT NULL CONSTRAINT chk_role CHECK (role IN ('ADMINISTRADOR', 'OPERADOR', 'CONSULTA')),
+    role VARCHAR(20) NOT NULL,
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE providers (
     id SERIAL PRIMARY KEY,
-    nit_cedula VARCHAR(20) NOT NULL UNIQUE,
+    nit_cedula VARCHAR(20) UNIQUE,
     name VARCHAR(100) NOT NULL,
     phone VARCHAR(20),
+    address VARCHAR(200),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE products (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL UNIQUE,
-    category VARCHAR(20) NOT NULL CONSTRAINT chk_category CHECK (category IN ('MATERIA_PRIMA', 'PRODUCTO_TERMINADO')),
-    type VARCHAR(20) NOT NULL CONSTRAINT chk_type CHECK (type IN ('SECO_NO_PERECEDERO', 'PERECEDERO')),
-    unit_base VARCHAR(20) NOT NULL CONSTRAINT chk_unit CHECK (unit_base IN ('KILOGRAMOS', 'LITROS', 'UNIDADES')),
+    category VARCHAR(25) NOT NULL,
+    type VARCHAR(20) NOT NULL,
+    unit_base VARCHAR(20) NOT NULL,
     stock_minimo NUMERIC(10,2),
+    presentation_quantity NUMERIC(10,2) NOT NULL,
+    CONSTRAINT chk_category CHECK (category IN ('MATERIA_PRIMA', 'PRODUCTO_TERMINADO', 'MATERIAL_DE_EMPAQUE', 'PRODUCTOS_L_D')),
+    CONSTRAINT chk_type CHECK (type IN ('SECO_NO_PERECEDERO', 'PERECEDERO')),
+    CONSTRAINT chk_unit CHECK (unit_base IN ('KILOGRAMOS', 'LITROS', 'UNIDADES', 'GRAMOS', 'MILILITROS')),
     CONSTRAINT chk_stock_minimo CHECK (
-        (type = 'SECO_NO_PERECEDERO' AND stock_minimo IS NOT NULL) OR 
+        (type = 'SECO_NO_PERECEDERO' AND stock_minimo IS NOT NULL AND stock_minimo > 0) OR
         (type = 'PERECEDERO' AND stock_minimo IS NULL)
-    )
+    ),
+    CONSTRAINT chk_presentation_quantity CHECK (presentation_quantity > 0)
 );
 
 CREATE TABLE inventory_entries (
@@ -151,11 +157,10 @@ CREATE TABLE inventory_entries (
     provider_id INT NOT NULL REFERENCES providers(id) ON DELETE RESTRICT,
     product_id INT NOT NULL REFERENCES products(id) ON DELETE RESTRICT,
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
-    package_quantity INT NOT NULL,
-    package_content NUMERIC(10,2) NOT NULL,
-    total_base_qty NUMERIC(10,2) NOT NULL,
-    net_cost NUMERIC(12,2) NOT NULL,
     entry_date DATE DEFAULT CURRENT_DATE,
+    expiration_date DATE NOT NULL,
+    batch_number VARCHAR(50) NOT NULL,
+    quantity_units NUMERIC(10,2) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

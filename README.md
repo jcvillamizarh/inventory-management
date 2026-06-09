@@ -137,3 +137,31 @@ src/
 │   └── reports/           # Reports domain
 └── lib/                   # Utilities and database config
 ```
+
+---
+
+## 📚 Documentación del Proyecto
+
+La carpeta `docs/` contiene la documentación técnica detallada del proyecto:
+
+* **`docs/era.md`** - Especificación de Requisitos de la Aplicación (ERA)
+  * Requisitos funcionales (RF) y casuísticas para TDD
+  * Requisitos no funcionales (RNF)
+  * Definición de inputs, reglas de negocio y casos de prueba
+
+* **`docs/mer.md`** - Modelo Entidad-Relación (MER)
+  * Diccionario de datos de todas las tablas
+  * Diagrama de estructura lógica y relaciones
+  * Scripts SQL de inicialización (DDL)
+
+* **`docs/arquitectura.md`** - Documento de Arquitectura de Software
+  * Stack tecnológico elegido
+  * Patrones de diseño (Repository Pattern, Use Cases)
+  * Estructura de carpetas modular desacoplada
+
+* **`AGENTS.md`** - Guía de Desarrollo para el Agente IA
+  * Principio fundamental de TDD (Ciclo Red-Green-Refactor)
+  * Reglas técnicas y buenas prácticas
+  * Comandos útiles para desarrollo
+
+
