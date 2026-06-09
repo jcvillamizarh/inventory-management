@@ -2,6 +2,25 @@ import { NextRequest, NextResponse } from 'next/server';
 import { CreateUserUseCase } from '../../../modules/users/use-cases/create-user.js';
 import { DrizzleUserRepository } from '../../../modules/users/infrastructure/users.drizzle.js';
 
+export async function GET() {
+  try {
+    const userRepository = new DrizzleUserRepository();
+    const users = await userRepository.findAll();
+
+    // Return users without password hash for security
+    const safeUsers = users.map((user) => ({
+      id: user.id,
+      username: user.username,
+      role: user.role,
+      active: user.isActive,
+    }));
+
+    return NextResponse.json(safeUsers, { status: 200 });
+  } catch (error: any) {
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();

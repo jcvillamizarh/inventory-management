@@ -1,6 +1,19 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { LoginUseCase } from './login.js';
 import type { IAuthRepository } from '../auth.repository.js';
+
+// Mock bcrypt
+vi.mock('bcryptjs', () => ({
+  default: {
+    compare: vi.fn().mockImplementation((password: string, hash: string) => {
+      // For testing purposes, accept any password when hash starts with '$2a$10$hashedpassword'
+      if (hash === '$2a$10$hashedpassword') {
+        return Promise.resolve(true);
+      }
+      return Promise.resolve(false);
+    }),
+  },
+}));
 
 class MockAuthRepository implements IAuthRepository {
   private users: any[] = [];

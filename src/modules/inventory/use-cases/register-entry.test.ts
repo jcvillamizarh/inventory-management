@@ -39,6 +39,14 @@ class MockInventoryRepository implements IInventoryRepository {
     return new Map();
   }
 
+  async providerExists(providerId: number): Promise<boolean> {
+    return true;
+  }
+
+  async productExists(productId: number): Promise<boolean> {
+    return true;
+  }
+
   clear() {
     this.entries = [];
   }

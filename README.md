@@ -39,7 +39,7 @@ Asegúrate de tener instalado en tu máquina:
 ### 2. Clonar e Instalar Dependencias
 Clona este repositorio en tu máquina local y accede a la carpeta del proyecto:
 ```bash
-git clone <url-de-tu-repositorio>
+git clone https://github.com/jcvillamizarh/inventory-management.git
 cd inventory-management
 npm install
 ```
@@ -163,5 +163,4 @@ La carpeta `docs/` contiene la documentación técnica detallada del proyecto:
   * Principio fundamental de TDD (Ciclo Red-Green-Refactor)
   * Reglas técnicas y buenas prácticas
   * Comandos útiles para desarrollo
-
-
+  

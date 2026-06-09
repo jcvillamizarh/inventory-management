@@ -15,6 +15,14 @@ class MockDrizzleInventoryRepository {
     return newEntry;
   }
 
+  async providerExists(providerId: number): Promise<boolean> {
+    return true;
+  }
+
+  async productExists(productId: number): Promise<boolean> {
+    return true;
+  }
+
   clear() {
     this.entries = [];
   }

@@ -5,6 +5,7 @@ import { DrizzleInventoryRepository } from '../../../../modules/inventory/infras
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    console.log('Received body:', body);
 
     const inventoryRepository = new DrizzleInventoryRepository();
     const useCase = new RegisterMorningEntryUseCase(inventoryRepository);
@@ -13,9 +14,11 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(result.data, { status: result.statusCode });
   } catch (error: any) {
+    console.error('Error in POST /api/inventory/entries:', error);
+    console.error('Error stack:', error.stack);
     if (error.statusCode === 400) {
       return NextResponse.json({ error: error.message || 'Invalid input data' }, { status: 400 });
     }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
   }
 }

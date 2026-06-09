@@ -10,4 +10,5 @@ export interface User {
 export interface IUserRepository {
   findByUsername(username: string): Promise<User | null>;
   save(user: Omit<User, 'id' | 'createdAt'>): Promise<User>;
+  findAll(): Promise<User[]>;
 }

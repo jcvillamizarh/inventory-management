@@ -1,5 +1,6 @@
 import { db } from '../../../lib/db/index.js';
 import { inventoryEntries, dailyClosures } from './inventory.schema.js';
+import { providers, products } from '../../../lib/db/schema.js';
 import { eq, and, gte, gt, lt, sum } from 'drizzle-orm';
 import type { IInventoryRepository, InventoryEntry, DailyClosure } from '../inventory.repository.js';
 
@@ -239,5 +240,25 @@ export class DrizzleInventoryRepository implements IInventoryRepository {
     }
 
     return stockMap;
+  }
+
+  async providerExists(providerId: number): Promise<boolean> {
+    const result = await db
+      .select({ id: providers.id })
+      .from(providers)
+      .where(eq(providers.id, providerId))
+      .limit(1);
+
+    return result.length > 0;
+  }
+
+  async productExists(productId: number): Promise<boolean> {
+    const result = await db
+      .select({ id: products.id })
+      .from(products)
+      .where(eq(products.id, productId))
+      .limit(1);
+
+    return result.length > 0;
   }
 }

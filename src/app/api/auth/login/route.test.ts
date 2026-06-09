@@ -1,5 +1,18 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
+// Mock bcrypt
+vi.mock('bcryptjs', () => ({
+  default: {
+    compare: vi.fn().mockImplementation((password: string, hash: string) => {
+      // For testing purposes, accept any password when hash starts with '$2a$10$hashedpassword'
+      if (hash === '$2a$10$hashedpassword') {
+        return Promise.resolve(true);
+      }
+      return Promise.resolve(false);
+    }),
+  },
+}));
+
 // Mock the DrizzleAuthRepository
 class MockDrizzleAuthRepository {
   private user: any = null;

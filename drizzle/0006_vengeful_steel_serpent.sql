@@ -1,0 +1,1 @@
+ALTER TABLE "inventory_entries" DROP COLUMN "net_cost";

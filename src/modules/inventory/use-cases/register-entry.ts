@@ -39,6 +39,24 @@ export class RegisterMorningEntryUseCase {
       };
     }
 
+    // Verify provider exists
+    const providerExists = await this.inventoryRepository.providerExists(validatedInput.providerId);
+    if (!providerExists) {
+      throw {
+        statusCode: 400,
+        message: `Provider with ID ${validatedInput.providerId} does not exist`,
+      };
+    }
+
+    // Verify product exists
+    const productExists = await this.inventoryRepository.productExists(validatedInput.productId);
+    if (!productExists) {
+      throw {
+        statusCode: 400,
+        message: `Product with ID ${validatedInput.productId} does not exist`,
+      };
+    }
+
     // Convert dates to Date objects if they are strings
     const entryDate = typeof validatedInput.entryDate === 'string' ? new Date(validatedInput.entryDate) : validatedInput.entryDate;
     const expirationDate = typeof validatedInput.expirationDate === 'string' ? new Date(validatedInput.expirationDate) : validatedInput.expirationDate;

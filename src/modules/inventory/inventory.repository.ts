@@ -29,4 +29,6 @@ export interface IInventoryRepository {
   hasExistingClosure(productId: number, date: Date): Promise<boolean>;
   getLatestPhysicalStock(productId: number): Promise<number>;
   getLatestPhysicalStockForAllProducts(): Promise<Map<number, number>>;
+  providerExists(providerId: number): Promise<boolean>;
+  productExists(productId: number): Promise<boolean>;
 }

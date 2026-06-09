@@ -19,13 +19,13 @@ describe('LoginPage', () => {
 
     expect(screen.getByLabelText('Usuario')).toBeInTheDocument();
     expect(screen.getByLabelText('Contraseña')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Iniciar Sesión' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'INICIAR SESIÓN' })).toBeInTheDocument();
   });
 
   it('should disable submit button when fields are empty', () => {
     render(<LoginPage />);
 
-    const submitButton = screen.getByRole('button', { name: 'Iniciar Sesión' });
+    const submitButton = screen.getByRole('button', { name: 'INICIAR SESIÓN' });
     expect(submitButton).toBeDisabled();
   });
 
@@ -34,7 +34,7 @@ describe('LoginPage', () => {
 
     const usernameInput = screen.getByLabelText('Usuario');
     const passwordInput = screen.getByLabelText('Contraseña');
-    const submitButton = screen.getByRole('button', { name: 'Iniciar Sesión' });
+    const submitButton = screen.getByRole('button', { name: 'INICIAR SESIÓN' });
 
     fireEvent.change(usernameInput, { target: { value: 'testuser' } });
     fireEvent.change(passwordInput, { target: { value: 'password123' } });
@@ -64,7 +64,7 @@ describe('LoginPage', () => {
 
     const usernameInput = screen.getByLabelText('Usuario');
     const passwordInput = screen.getByLabelText('Contraseña');
-    const submitButton = screen.getByRole('button', { name: 'Iniciar Sesión' });
+    const submitButton = screen.getByRole('button', { name: 'INICIAR SESIÓN' });
 
     fireEvent.change(usernameInput, { target: { value: 'testuser' } });
     fireEvent.change(passwordInput, { target: { value: 'password123' } });
@@ -82,7 +82,7 @@ describe('LoginPage', () => {
 
     const usernameInput = screen.getByLabelText('Usuario');
     const passwordInput = screen.getByLabelText('Contraseña');
-    const submitButton = screen.getByRole('button', { name: 'Iniciar Sesión' });
+    const submitButton = screen.getByRole('button', { name: 'INICIAR SESIÓN' });
 
     fireEvent.change(usernameInput, { target: { value: 'testuser' } });
     fireEvent.change(passwordInput, { target: { value: 'wrongpassword' } });

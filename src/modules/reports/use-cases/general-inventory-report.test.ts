@@ -79,6 +79,72 @@ class MockInventoryRepository {
 
     return baseStock + entriesTotal;
   }
+
+  async getLatestPhysicalStockForAllProducts(): Promise<Map<number, number>> {
+    const stockMap = new Map<number, number>();
+    const today = new Date().toISOString().split('T')[0];
+
+    // Get all closures for today
+    const todayClosures = this.closures.filter(
+      c => c.closureDate.toISOString().split('T')[0] === today
+    );
+
+    // Map today's closures
+    for (const closure of todayClosures) {
+      stockMap.set(closure.productId, parseFloat(closure.physicalStock));
+    }
+
+    // Get all other closures (not today)
+    const otherClosures = this.closures.filter(
+      c => c.closureDate.toISOString().split('T')[0] < today
+    );
+
+    // Get the latest closure for each product (not today)
+    const latestClosures = new Map<number, { stock: number; date: string }>();
+    for (const closure of otherClosures) {
+      if (!latestClosures.has(closure.productId)) {
+        latestClosures.set(closure.productId, {
+          stock: parseFloat(closure.physicalStock),
+          date: closure.closureDate.toISOString().split('T')[0],
+        });
+      }
+    }
+
+    // Calculate stock for products without today's closure
+    for (const [productId, closure] of latestClosures) {
+      if (!stockMap.has(productId)) {
+        // Sum entries since the last closure
+        const entriesSinceClosure = this.entries
+          .filter(e => e.productId === productId && e.entryDate.toISOString().split('T')[0] > closure.date)
+          .reduce((sum, e) => sum + parseFloat(e.quantityUnits), 0);
+        
+        stockMap.set(productId, closure.stock + entriesSinceClosure);
+      }
+    }
+
+    // For products with no closures at all, sum all entries
+    const productIdsWithClosures = new Set([...stockMap.keys()]);
+    const allProductIds = new Set(this.entries.map(e => e.productId));
+    
+    for (const productId of allProductIds) {
+      if (!productIdsWithClosures.has(productId)) {
+        const totalEntries = this.entries
+          .filter(e => e.productId === productId)
+          .reduce((sum, e) => sum + parseFloat(e.quantityUnits), 0);
+        stockMap.set(productId, totalEntries);
+      }
+    }
+
+    return stockMap;
+  }
+
+  async providerExists(providerId: number): Promise<boolean> {
+    return true;
+  }
+
+  async productExists(productId: number): Promise<boolean> {
+    return true;
+  }
 }
 
 const mockProductRepo = new MockProductRepository();
@@ -139,9 +205,18 @@ describe('GeneralInventoryReportUseCase', () => {
 
   it('should return 0 stock if no closure exists for product', async () => {
     // Override mock to return no closure for product 2
-    mockInventoryRepo.getLatestPhysicalStock = async () => 0;
+    const freshMockRepo = new MockInventoryRepository();
+    freshMockRepo['closures'] = [
+      {
+        productId: 1,
+        physicalStock: 2.0,
+        closureDate: new Date('2024-01-01'),
+      },
+      // No closure for product 2
+    ];
 
-    const result = await useCase.execute();
+    const freshUseCase = new GeneralInventoryReportUseCase(mockProductRepo, freshMockRepo);
+    const result = await freshUseCase.execute();
 
     const flourProduct = result.find((p: any) => p.name === 'Harina de Trigo');
     expect(flourProduct.stockUnidades).toBe(0);

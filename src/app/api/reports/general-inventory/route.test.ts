@@ -46,6 +46,22 @@ class MockInventoryRepository {
     const closure = this.closures.find(c => c.productId === productId);
     return closure ? parseFloat(closure.physicalStock) : 0;
   }
+
+  async getLatestPhysicalStockForAllProducts(): Promise<Map<number, number>> {
+    const stockMap = new Map<number, number>();
+    for (const closure of this.closures) {
+      stockMap.set(closure.productId, parseFloat(closure.physicalStock));
+    }
+    return stockMap;
+  }
+
+  async providerExists(providerId: number): Promise<boolean> {
+    return true;
+  }
+
+  async productExists(productId: number): Promise<boolean> {
+    return true;
+  }
 }
 
 const mockProductRepo = new MockProductRepository();

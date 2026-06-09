@@ -47,4 +47,17 @@ export class DrizzleUserRepository implements IUserRepository {
       createdAt: savedUser.createdAt,
     };
   }
+
+  async findAll(): Promise<User[]> {
+    const result = await db.select().from(users);
+
+    return result.map((user) => ({
+      id: user.id,
+      username: user.username,
+      passwordHash: user.passwordHash,
+      role: user.role as 'ADMINISTRADOR' | 'OPERADOR' | 'CONSULTA',
+      isActive: user.isActive,
+      createdAt: user.createdAt,
+    }));
+  }
 }

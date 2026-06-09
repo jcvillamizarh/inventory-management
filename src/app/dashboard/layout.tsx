@@ -16,8 +16,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   }, []);
 
   const isAdmin = user?.role === 'ADMINISTRADOR' || user?.role === 'admin';
+  const isOperador = user?.role === 'OPERADOR' || user?.role === 'operador';
   const isConsulta = user?.role === 'CONSULTA' || user?.role === 'consulta';
-  const canViewReports = user?.role === 'ADMINISTRADOR' || user?.role === 'CONSULTA' || user?.role === 'admin' || user?.role === 'consulta';
+  const canViewReports = isAdmin || isConsulta;
 
   const handleLogout = () => {
     localStorage.removeItem('user');
