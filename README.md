@@ -1,15 +1,18 @@
-# Sistema de Gestión de Inventario - Producción de Empanadas 🥟
+# Sistema de Gestión de Inventario - Majaka 🥟
 
-Este es un sistema full-stack desarrollado bajo la metodología **Test-Driven Development (TDD)** y principios de **Arquitectura Desacoplada**. Diseñado específicamente con un enfoque *Mobile-First* para optimizar el control de materias primas, insumos y productos terminados directamente desde dispositivos móviles en el entorno de producción (cocina).
+Sistema full-stack de gestión de inventario desarrollado bajo la metodología **Test-Driven Development (TDD)** y principios de **Arquitectura Desacoplada**. Diseñado específicamente con un enfoque *Mobile-First* para optimizar el control de materias primas, insumos y productos terminados directamente desde dispositivos móviles en el entorno de producción (cocina).
 
 ---
 
 ## 🚀 Características Principales
 
 * **Desacoplamiento Garantizado:** Implementación del *Patrón Repositorio* y *Casos de Uso* únicos, aislando por completo la lógica de negocio del motor de base de datos.
-* **Robustez Matemática:** Control automatizado del balance diario de masa y consumos, bloqueando inconsistencias antes de impactar el inventario físico.
-* **Seguridad:** Control de acceso basado en roles (`ADMINISTRADOR`, `OPERADOR`, `CONSULTA`) y cifrado criptográfico robusto con `bcryptjs` bajo estándares OWASP.
-* **Calidad de Código:** Suite de 54 pruebas unitarias e de integración automatizadas que validan cada regla de negocio en milisegundos.
+* **Cálculo Preciso de Stock:** Algoritmo optimizado que calcula el stock actual basándose en cierres diarios y entradas posteriores, evitando duplicaciones y errores.
+* **Alertas de Stock:** Sistema automático de alertas para productos no perecederos que caen por debajo del stock mínimo configurado.
+* **Control de Acceso por Roles:** Gestión de roles (`ADMINISTRADOR`, `CONSULTA`) con redirección inteligente y restricción de acceso a secciones sensibles.
+* **Seguridad:** Cifrado criptográfico robusto con `bcryptjs` bajo estándares OWASP para la persistencia de contraseñas.
+* **Optimización de Rendimiento:** Consultas batch optimizadas para evitar problemas N+1 en reportes de inventario.
+* **Calidad de Código:** Suite de pruebas automatizadas que validan cada regla de negocio.
 
 ---
 
@@ -21,6 +24,8 @@ Este es un sistema full-stack desarrollado bajo la metodología **Test-Driven De
 * **ORM:** Drizzle ORM
 * **Validación:** Zod
 * **Pruebas:** Vitest
+* **Estilos:** TailwindCSS
+* **Despliegue:** Vercel
 
 ---
 
@@ -75,17 +80,24 @@ npm test
 
 ## 📱 Uso de la Aplicación
 
+### Roles de Usuario
+* **ADMINISTRADOR:** Acceso completo a todas las funcionalidades (registro de entradas, cierre diario, administración, reportes).
+* **CONSULTA:** Acceso restringido únicamente a la sección de reportes, sin capacidad de modificar inventario.
+
+### Funcionalidades
 1. **Login:** Accede a `http://localhost:3000` e inicia sesión con tus credenciales
 2. **Dashboard:** Según tu rol, serás redirigido al panel correspondiente
 3. **Registro de Entradas:** Registra las entradas de inventario de la mañana
-4. **Cierre Diario:** Procesa el cierre diario con balance de masa
-5. **Reportes:** Consulta alertas de stock y reportes financieros
+4. **Cierre Diario:** Procesa el cierre diario con balance de masa y stock físico actual
+5. **Reportes:**
+   - **Alertas de Stock:** Visualiza productos con stock bajo el mínimo configurado
+   - **Inventario General:** Consulta el stock actual de todos los productos con cálculo de medida total
 
 ---
 
 ## 🧪 Testing
 
-El proyecto cuenta con 54 pruebas automatizadas que cubren:
+El proyecto cuenta con pruebas automatizadas que cubren:
 - Casos de uso de negocio
 - Integración de API routes
 - Control de acceso por roles
@@ -93,4 +105,35 @@ El proyecto cuenta con 54 pruebas automatizadas que cubren:
 Ejecuta las pruebas en modo watch para desarrollo:
 ```bash
 npm test
+```
+
+---
+
+## 🚀 Despliegue en Producción
+
+El proyecto está configurado para despliegue en Vercel. Para desplegar:
+
+1. Conecta tu repositorio de GitHub a Vercel
+2. Configura las variables de entorno en Vercel (`DATABASE_URL`)
+3. Vercel detectará automáticamente que es un proyecto Next.js y lo desplegará
+
+### Variables de Entorno Requeridas
+* `DATABASE_URL`: URL de conexión a PostgreSQL
+
+---
+
+## 📁 Estructura del Proyecto
+
+```
+src/
+├── app/                    # Next.js App Router
+│   ├── api/               # API Routes
+│   ├── dashboard/         # Dashboard pages
+│   └── page.tsx           # Login page
+├── modules/               # Domain modules
+│   ├── inventory/         # Inventory domain
+│   ├── products/          # Products domain
+│   ├── providers/         # Providers domain
+│   └── reports/           # Reports domain
+└── lib/                   # Utilities and database config
 ```
