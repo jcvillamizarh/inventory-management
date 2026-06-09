@@ -19,6 +19,7 @@ export interface DailyClosure {
   totalEntries: number;
   physicalStock: number;
   calculatedConsumption: number;
+  notes?: string;
 }
 
 export interface IInventoryRepository {

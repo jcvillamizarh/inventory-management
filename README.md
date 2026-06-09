@@ -56,11 +56,16 @@ DATABASE_URL=postgresql://usuario:password@localhost:5432/tu_base_de_datos
 ```
 
 ### 4. Ejecutar Migraciones
-Genera y aplica las migraciones de la base de datos:
+El proyecto usa Drizzle ORM para gestionar las migraciones. Las migraciones están pre-generadas en la carpeta `drizzle/`.
+
+Para aplicar las migraciones a tu base de datos:
 ```bash
-npm run db:generate
-npm run db:migrate
+npx drizzle-kit push
 ```
+
+Esto sincronizará el esquema de la base de datos con el archivo `src/lib/db/schema.ts`.
+
+**Nota:** El sistema incluye una tabla `stock_movements` que rastrea todos los cambios de inventario (entradas, cierres, ajustes) para cálculo de stock en tiempo real. La migración automática de datos existentes se ejecuta la primera vez que se consulta el stock.
 
 ### 5. Correr el Servidor de Desarrollo
 Inicia el servidor de desarrollo de Next.js:

@@ -1,6 +1,6 @@
 {
-  "id": "694987ac-4bad-4c24-abbc-dbc682bead4b",
-  "prevId": "8c1fb86b-2223-4118-b735-f0791981398c",
+  "id": "581d830e-7b4f-4b01-87a8-3b402c26fec7",
+  "prevId": "65670b91-aeaf-424a-b82d-58844216f59c",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -33,6 +33,13 @@
           "notNull": true,
           "default": "now()"
         },
+        "closure_timestamp": {
+          "name": "closure_timestamp",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
         "initial_stock": {
           "name": "initial_stock",
           "type": "numeric(10, 2)",
@@ -57,6 +64,12 @@
           "type": "numeric(10, 2)",
           "primaryKey": false,
           "notNull": true
+        },
+        "notes": {
+          "name": "notes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {},
@@ -122,36 +135,30 @@
           "primaryKey": false,
           "notNull": true
         },
-        "package_quantity": {
-          "name": "package_quantity",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "package_content": {
-          "name": "package_content",
-          "type": "numeric(10, 2)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "total_base_qty": {
-          "name": "total_base_qty",
-          "type": "numeric(10, 2)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "net_cost": {
-          "name": "net_cost",
-          "type": "numeric(12, 2)",
-          "primaryKey": false,
-          "notNull": true
-        },
         "entry_date": {
           "name": "entry_date",
           "type": "date",
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "expiration_date": {
+          "name": "expiration_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "batch_number": {
+          "name": "batch_number",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "quantity_units": {
+          "name": "quantity_units",
+          "type": "numeric(10, 2)",
+          "primaryKey": false,
+          "notNull": true
         },
         "created_at": {
           "name": "created_at",
@@ -227,7 +234,7 @@
         },
         "category": {
           "name": "category",
-          "type": "varchar(20)",
+          "type": "varchar(25)",
           "primaryKey": false,
           "notNull": true
         },
@@ -286,7 +293,7 @@
           "name": "nit_cedula",
           "type": "varchar(20)",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "name": {
           "name": "name",
@@ -297,6 +304,12 @@
         "phone": {
           "name": "phone",
           "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "address": {
+          "name": "address",
+          "type": "varchar(200)",
           "primaryKey": false,
           "notNull": false
         },
@@ -311,15 +324,102 @@
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "providers_nit_cedula_unique": {
-          "name": "providers_nit_cedula_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "nit_cedula"
-          ]
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.stock_movements": {
+      "name": "stock_movements",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigserial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "product_id": {
+          "name": "product_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "movement_type": {
+          "name": "movement_type",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "quantity": {
+          "name": "quantity",
+          "type": "numeric(10, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reference_id": {
+          "name": "reference_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reference_type": {
+          "name": "reference_type",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "timestamp": {
+          "name": "timestamp",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "notes": {
+          "name": "notes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         }
       },
+      "indexes": {},
+      "foreignKeys": {
+        "stock_movements_product_id_products_id_fk": {
+          "name": "stock_movements_product_id_products_id_fk",
+          "tableFrom": "stock_movements",
+          "tableTo": "products",
+          "columnsFrom": [
+            "product_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "stock_movements_user_id_users_id_fk": {
+          "name": "stock_movements_user_id_users_id_fk",
+          "tableFrom": "stock_movements",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false

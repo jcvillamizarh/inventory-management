@@ -1,5 +1,5 @@
 {
-  "id": "8c1fb86b-2223-4118-b735-f0791981398c",
+  "id": "65670b91-aeaf-424a-b82d-58844216f59c",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -122,36 +122,30 @@
           "primaryKey": false,
           "notNull": true
         },
-        "package_quantity": {
-          "name": "package_quantity",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "package_content": {
-          "name": "package_content",
-          "type": "numeric(10, 2)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "total_base_qty": {
-          "name": "total_base_qty",
-          "type": "numeric(10, 2)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "net_cost": {
-          "name": "net_cost",
-          "type": "numeric(12, 2)",
-          "primaryKey": false,
-          "notNull": true
-        },
         "entry_date": {
           "name": "entry_date",
           "type": "date",
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "expiration_date": {
+          "name": "expiration_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "batch_number": {
+          "name": "batch_number",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "quantity_units": {
+          "name": "quantity_units",
+          "type": "numeric(10, 2)",
+          "primaryKey": false,
+          "notNull": true
         },
         "created_at": {
           "name": "created_at",
@@ -227,7 +221,7 @@
         },
         "category": {
           "name": "category",
-          "type": "varchar(20)",
+          "type": "varchar(25)",
           "primaryKey": false,
           "notNull": true
         },
@@ -248,6 +242,12 @@
           "type": "numeric(10, 2)",
           "primaryKey": false,
           "notNull": false
+        },
+        "presentation_quantity": {
+          "name": "presentation_quantity",
+          "type": "numeric(10, 2)",
+          "primaryKey": false,
+          "notNull": true
         }
       },
       "indexes": {},
@@ -280,7 +280,7 @@
           "name": "nit_cedula",
           "type": "varchar(20)",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "name": {
           "name": "name",
@@ -291,6 +291,12 @@
         "phone": {
           "name": "phone",
           "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "address": {
+          "name": "address",
+          "type": "varchar(200)",
           "primaryKey": false,
           "notNull": false
         },
@@ -305,15 +311,7 @@
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "providers_nit_cedula_unique": {
-          "name": "providers_nit_cedula_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "nit_cedula"
-          ]
-        }
-      },
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false

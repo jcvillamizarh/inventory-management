@@ -52,8 +52,22 @@ export const dailyClosures = pgTable('daily_closures', {
   productId: integer('product_id').notNull().references(() => products.id),
   userId: uuid('user_id').notNull().references(() => users.id),
   closureDate: date('closure_date').defaultNow().notNull(),
+  closureTimestamp: timestamp('closure_timestamp').defaultNow().notNull(),
   initialStock: numeric('initial_stock', { precision: 10, scale: 2 }).notNull(),
   totalEntries: numeric('total_entries', { precision: 10, scale: 2 }).default('0.00').notNull(),
   physicalStock: numeric('physical_stock', { precision: 10, scale: 2 }).notNull(),
   calculatedConsumption: numeric('calculated_consumption', { precision: 10, scale: 2 }).notNull(),
+  notes: text('notes'),
+});
+
+export const stockMovements = pgTable('stock_movements', {
+  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  productId: integer('product_id').notNull().references(() => products.id),
+  userId: uuid('user_id').notNull().references(() => users.id),
+  movementType: varchar('movement_type', { length: 20 }).notNull(),
+  quantity: numeric('quantity', { precision: 10, scale: 2 }).notNull(),
+  referenceId: integer('reference_id'),
+  referenceType: varchar('reference_type', { length: 50 }),
+  timestamp: timestamp('timestamp').defaultNow().notNull(),
+  notes: text('notes'),
 });

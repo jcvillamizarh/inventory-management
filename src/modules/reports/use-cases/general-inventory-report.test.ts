@@ -31,21 +31,19 @@ class MockProductRepository {
 class MockInventoryRepository {
   private closures: any[] = [
     {
-      productId: 1,
-      physicalStock: 2.0,
-      closureDate: new Date('2024-01-01'),
-    },
-    {
       productId: 2,
       physicalStock: 50.0,
       closureDate: new Date('2024-01-01'),
+      initialStock: 0.0,
+      totalEntries: 0.0,
+      calculatedConsumption: 0.0,
     },
   ];
 
   private entries: any[] = [
     {
       productId: 1,
-      quantityUnits: 0,
+      quantityUnits: 2.0,
       entryDate: new Date('2024-01-01'),
     },
     {
@@ -82,57 +80,42 @@ class MockInventoryRepository {
 
   async getLatestPhysicalStockForAllProducts(): Promise<Map<number, number>> {
     const stockMap = new Map<number, number>();
-    const today = new Date().toISOString().split('T')[0];
 
-    // Get all closures for today
-    const todayClosures = this.closures.filter(
-      c => c.closureDate.toISOString().split('T')[0] === today
-    );
+    // Simulate stock movements: entries are positive, closure adjustments are negative
+    const movements: any[] = [];
 
-    // Map today's closures
-    for (const closure of todayClosures) {
-      stockMap.set(closure.productId, parseFloat(closure.physicalStock));
+    // Add entry movements
+    for (const entry of this.entries) {
+      movements.push({
+        productId: entry.productId,
+        quantity: parseFloat(entry.quantityUnits),
+        timestamp: entry.entryDate,
+        movementType: 'ENTRY',
+      });
     }
 
-    // Get all other closures (not today)
-    const otherClosures = this.closures.filter(
-      c => c.closureDate.toISOString().split('T')[0] < today
-    );
-
-    // Get the latest closure for each product (not today)
-    const latestClosures = new Map<number, { stock: number; date: string }>();
-    for (const closure of otherClosures) {
-      if (!latestClosures.has(closure.productId)) {
-        latestClosures.set(closure.productId, {
-          stock: parseFloat(closure.physicalStock),
-          date: closure.closureDate.toISOString().split('T')[0],
+    // Add closure adjustment movements
+    for (const closure of this.closures) {
+      const theoreticalStock = parseFloat(closure.initialStock) + parseFloat(closure.totalEntries);
+      const adjustment = parseFloat(closure.physicalStock) - theoreticalStock;
+      if (adjustment !== 0) {
+        movements.push({
+          productId: closure.productId,
+          quantity: adjustment,
+          timestamp: closure.closureDate,
+          movementType: 'CLOSURE_ADJUSTMENT',
         });
       }
     }
 
-    // Calculate stock for products without today's closure
-    for (const [productId, closure] of latestClosures) {
-      if (!stockMap.has(productId)) {
-        // Sum entries since the last closure
-        const entriesSinceClosure = this.entries
-          .filter(e => e.productId === productId && e.entryDate.toISOString().split('T')[0] > closure.date)
-          .reduce((sum, e) => sum + parseFloat(e.quantityUnits), 0);
-        
-        stockMap.set(productId, closure.stock + entriesSinceClosure);
-      }
-    }
+    // Sort by timestamp
+    movements.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 
-    // For products with no closures at all, sum all entries
-    const productIdsWithClosures = new Set([...stockMap.keys()]);
-    const allProductIds = new Set(this.entries.map(e => e.productId));
-    
-    for (const productId of allProductIds) {
-      if (!productIdsWithClosures.has(productId)) {
-        const totalEntries = this.entries
-          .filter(e => e.productId === productId)
-          .reduce((sum, e) => sum + parseFloat(e.quantityUnits), 0);
-        stockMap.set(productId, totalEntries);
-      }
+    // Sum movements chronologically
+    for (const movement of movements) {
+      const currentStock = stockMap.get(movement.productId) || 0;
+      const newStock = currentStock + movement.quantity;
+      stockMap.set(movement.productId, newStock);
     }
 
     return stockMap;
@@ -182,9 +165,10 @@ describe('GeneralInventoryReportUseCase', () => {
 
     const lemonProduct = result.find(p => p.name === 'Zumo de limón');
     expect(lemonProduct).toBeDefined();
+    // Entry: 2.0, Closure adjustment: (2.0 - (0 + 2.0)) = 0.0, Total: 2.0
     expect(lemonProduct.stockUnidades).toBe(2.0);
     expect(lemonProduct.cantidadMedida).toBe(2.0);
-    expect(lemonProduct.totalNetoMedida).toBe(4.0); // 2 units * 2 liters = 4 liters
+    expect(lemonProduct.totalNetoMedida).toBe(4.0); // 2.0 * 2.0 = 4.0
   });
 
   it('should return all products with calculated inventory data', async () => {
@@ -203,16 +187,22 @@ describe('GeneralInventoryReportUseCase', () => {
     });
   });
 
-  it('should return 0 stock if no closure exists for product', async () => {
-    // Override mock to return no closure for product 2
+  it('should return 0 stock if no entries and no closure exist for product', async () => {
+    // Create a fresh mock with no entries and no closure for product 2
     const freshMockRepo = new MockInventoryRepository();
+    freshMockRepo['entries'] = [
+      {
+        productId: 1,
+        quantityUnits: 5.0,
+        entryDate: new Date('2024-01-01'),
+      },
+    ];
     freshMockRepo['closures'] = [
       {
         productId: 1,
         physicalStock: 2.0,
         closureDate: new Date('2024-01-01'),
       },
-      // No closure for product 2
     ];
 
     const freshUseCase = new GeneralInventoryReportUseCase(mockProductRepo, freshMockRepo);
@@ -223,44 +213,29 @@ describe('GeneralInventoryReportUseCase', () => {
     expect(flourProduct.totalNetoMedida).toBe(0);
   });
 
-  it('should include inventory entries after last closure in stock calculation', async () => {
-    // Create a fresh mock with entries after closure date
+  it('should use closure value plus entries after closure (including same day)', async () => {
+    // Create a fresh mock with entries before and after closure
     const freshMockRepo = new MockInventoryRepository();
     freshMockRepo['entries'] = [
       {
         productId: 1,
-        quantityUnits: 3.0,
-        entryDate: new Date('2024-01-02'),
+        quantityUnits: 10.0,
+        entryDate: new Date('2024-01-01'), // Before closure
       },
       {
-        productId: 2,
-        quantityUnits: 0,
-        entryDate: new Date('2024-01-01'),
+        productId: 1,
+        quantityUnits: 10.0,
+        entryDate: new Date('2024-01-10'), // Same day as closure
       },
     ];
-
-    const freshUseCase = new GeneralInventoryReportUseCase(mockProductRepo, freshMockRepo);
-    const result = await freshUseCase.execute();
-
-    const lemonProduct = result.find((p: any) => p.name === 'Zumo de limón');
-    expect(lemonProduct.stockUnidades).toBe(5.0); // 2.0 from closure + 3.0 from new entry
-    expect(lemonProduct.totalNetoMedida).toBe(10.0); // 5.0 * 2.0
-  });
-
-  it('should return physical stock from today closure if exists', async () => {
-    // Create a fresh mock with a closure for today
-    const today = new Date().toISOString().split('T')[0];
-    const freshMockRepo = new MockInventoryRepository();
     freshMockRepo['closures'] = [
       {
         productId: 1,
-        physicalStock: 50.0,
-        closureDate: new Date(today),
-      },
-      {
-        productId: 2,
-        physicalStock: 50.0,
-        closureDate: new Date('2024-01-01'),
+        physicalStock: 10.0,
+        closureDate: new Date('2024-01-10'),
+        initialStock: 10.0,
+        totalEntries: 0.0,
+        calculatedConsumption: 0.0,
       },
     ];
 
@@ -268,7 +243,9 @@ describe('GeneralInventoryReportUseCase', () => {
     const result = await freshUseCase.execute();
 
     const lemonProduct = result.find((p: any) => p.name === 'Zumo de limón');
-    expect(lemonProduct.stockUnidades).toBe(50.0); // Should return today's closure stock, not sum with entries
-    expect(lemonProduct.totalNetoMedida).toBe(100.0); // 50.0 * 2.0
+    // Entry 1: 10.0, Closure adjustment: (10.0 - (10.0 + 0.0)) = 0.0, Entry 2: 10.0
+    // Total: 10.0 + 0.0 + 10.0 = 20.0
+    expect(lemonProduct.stockUnidades).toBe(20.0);
+    expect(lemonProduct.totalNetoMedida).toBe(40.0); // 20.0 * 2.0
   });
 });

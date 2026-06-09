@@ -1,11 +1,14 @@
 # DEPENDENCIAS DE NODE
 node_modules/
+.pnp/
+.pnp.js
 
 # COMPILACIÓN, PRODUCCIÓN Y SALIDAS
 .next/
 out/
 dist/
 build/
+.turbo/
 
 # VARIABLES DE ENTORNO Y SEGURIDAD (CRUCIAL)
 .env
@@ -26,3 +29,6 @@ yarn-error.log*
 .idea/
 .DS_Store
 Thumbs.db
+
+# SCRIPTS TEMPORALES
+scripts/*.ts

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ProcessDailyClosureUseCase } from '../../../../modules/inventory/use-cases/process-closure.js';
 import { DrizzleInventoryRepository } from '../../../../modules/inventory/infrastructure/inventory.drizzle.js';
+import { revalidatePath } from 'next/cache';
 
 export async function POST(request: NextRequest) {
   try {
@@ -10,6 +11,11 @@ export async function POST(request: NextRequest) {
     const useCase = new ProcessDailyClosureUseCase(inventoryRepository);
 
     const result = await useCase.execute(body);
+
+    // Revalidate paths to ensure stock info is updated immediately
+    revalidatePath('/dashboard/closure');
+    revalidatePath('/dashboard/reports');
+    revalidatePath('/api/inventory/stock-info');
 
     return NextResponse.json(result.data, { status: result.statusCode });
   } catch (error: any) {

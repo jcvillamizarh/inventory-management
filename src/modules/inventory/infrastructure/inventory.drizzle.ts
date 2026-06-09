@@ -1,7 +1,7 @@
 import { db } from '../../../lib/db/index.js';
 import { inventoryEntries, dailyClosures } from './inventory.schema.js';
-import { providers, products } from '../../../lib/db/schema.js';
-import { eq, and, gte, gt, lt, sum } from 'drizzle-orm';
+import { providers, products, stockMovements } from '../../../lib/db/schema.js';
+import { eq, and, gte, gt, lt, sum, sql } from 'drizzle-orm';
 import type { IInventoryRepository, InventoryEntry, DailyClosure } from '../inventory.repository.js';
 
 export class DrizzleInventoryRepository implements IInventoryRepository {
@@ -20,6 +20,18 @@ export class DrizzleInventoryRepository implements IInventoryRepository {
       .returning();
 
     const savedEntry = result[0];
+
+    // Create stock movement for this entry
+    await db.insert(stockMovements).values({
+      productId: savedEntry.productId,
+      userId: savedEntry.userId,
+      movementType: 'ENTRY',
+      quantity: savedEntry.quantityUnits,
+      referenceId: savedEntry.id,
+      referenceType: 'ENTRY',
+      notes: `Entry: ${savedEntry.batchNumber}`,
+    });
+
     return {
       id: savedEntry.id,
       providerId: savedEntry.providerId,
@@ -77,14 +89,32 @@ export class DrizzleInventoryRepository implements IInventoryRepository {
         productId: closure.productId,
         userId: closure.userId,
         closureDate: closure.closureDate.toISOString().split('T')[0],
+        closureTimestamp: new Date(),
         initialStock: closure.initialStock.toString(),
         totalEntries: closure.totalEntries.toString(),
         physicalStock: closure.physicalStock.toString(),
         calculatedConsumption: closure.calculatedConsumption.toString(),
+        notes: closure.notes,
       })
       .returning();
 
     const savedClosure = result[0];
+
+    // Create stock movement for the adjustment (consumption)
+    // The adjustment is the difference between the theoretical stock and physical stock
+    const adjustment = parseFloat(savedClosure.physicalStock) - (parseFloat(savedClosure.initialStock) + parseFloat(savedClosure.totalEntries));
+    if (adjustment !== 0) {
+      await db.insert(stockMovements).values({
+        productId: savedClosure.productId,
+        userId: savedClosure.userId,
+        movementType: 'CLOSURE_ADJUSTMENT',
+        quantity: adjustment.toString(),
+        referenceId: savedClosure.id,
+        referenceType: 'CLOSURE',
+        notes: `Closure adjustment: theoretical ${parseFloat(savedClosure.initialStock) + parseFloat(savedClosure.totalEntries)} -> physical ${savedClosure.physicalStock}`,
+      });
+    }
+
     return {
       id: savedClosure.id,
       productId: savedClosure.productId,
@@ -112,134 +142,133 @@ export class DrizzleInventoryRepository implements IInventoryRepository {
   }
 
   async getLatestPhysicalStock(productId: number): Promise<number> {
-    const today = new Date().toISOString().split('T')[0];
+    // Get all stock movements for this product ordered chronologically
+    const allMovements = await db
+      .select({
+        quantity: stockMovements.quantity,
+      })
+      .from(stockMovements)
+      .where(eq(stockMovements.productId, productId))
+      .orderBy(stockMovements.timestamp);
 
-    // Check if there's a closure for today
-    const todayClosureResult = await db
-      .select({ physicalStock: dailyClosures.physicalStock })
-      .from(dailyClosures)
-      .where(and(
-        eq(dailyClosures.productId, productId),
-        eq(dailyClosures.closureDate, today)
-      ))
-      .limit(1);
-
-    if (todayClosureResult.length > 0) {
-      // Return the physical stock from today's closure
-      return parseFloat(todayClosureResult[0].physicalStock);
+    // If no movements exist, migrate existing data
+    if (allMovements.length === 0) {
+      await this.migrateExistingDataToMovements();
+      return this.getLatestPhysicalStock(productId);
     }
 
-    // If no closure today, get the latest closure and add entries since then
-    const closureResult = await db
-      .select({ physicalStock: dailyClosures.physicalStock, closureDate: dailyClosures.closureDate })
-      .from(dailyClosures)
-      .where(eq(dailyClosures.productId, productId))
-      .orderBy(dailyClosures.closureDate)
-      .limit(1);
-
-    let baseStock = 0;
-    let lastClosureDate = null;
-
-    if (closureResult.length > 0) {
-      baseStock = parseFloat(closureResult[0].physicalStock);
-      lastClosureDate = closureResult[0].closureDate;
+    // Sum all movements chronologically
+    let stock = 0;
+    for (const movement of allMovements) {
+      stock += parseFloat(movement.quantity);
     }
 
-    // Sum all inventory entries since the last closure (or all if no closure)
-    const entriesResult = await db
-      .select({ total: sum(inventoryEntries.quantityUnits) })
-      .from(inventoryEntries)
-      .where(
-        lastClosureDate
-          ? and(
-              eq(inventoryEntries.productId, productId),
-              gt(inventoryEntries.entryDate, lastClosureDate)
-            )
-          : eq(inventoryEntries.productId, productId)
-      );
-
-    const entriesTotal = entriesResult.length > 0 && entriesResult[0].total !== null
-      ? parseFloat(entriesResult[0].total)
-      : 0;
-
-    return baseStock + entriesTotal;
+    return stock;
   }
 
   async getLatestPhysicalStockForAllProducts(): Promise<Map<number, number>> {
-    const today = new Date().toISOString().split('T')[0];
     const stockMap = new Map<number, number>();
 
-    // Get all closures for today
-    const todayClosures = await db
+    // Get all stock movements ordered chronologically
+    const allMovements = await db
       .select({
-        productId: dailyClosures.productId,
-        physicalStock: dailyClosures.physicalStock,
+        productId: stockMovements.productId,
+        quantity: stockMovements.quantity,
+        timestamp: stockMovements.timestamp,
+        movementType: stockMovements.movementType,
       })
-      .from(dailyClosures)
-      .where(eq(dailyClosures.closureDate, today));
+      .from(stockMovements)
+      .orderBy(stockMovements.timestamp);
 
-    // Map today's closures
-    for (const closure of todayClosures) {
-      stockMap.set(closure.productId, parseFloat(closure.physicalStock));
+    // If no movements exist, migrate existing data
+    if (allMovements.length === 0) {
+      await this.migrateExistingDataToMovements();
+      return this.getLatestPhysicalStockForAllProducts();
     }
 
-    // Get all other closures (not today)
-    const otherClosures = await db
+    // Sum all movements for each product chronologically
+    for (const movement of allMovements) {
+      const currentStock = stockMap.get(movement.productId) || 0;
+      const quantity = parseFloat(movement.quantity);
+      const newStock = currentStock + quantity;
+      stockMap.set(movement.productId, newStock);
+    }
+
+    return stockMap;
+  }
+
+  private async migrateExistingDataToMovements(): Promise<void> {
+    // Check if migration already happened by looking for migrated notes
+    const existingMigrated = await db
+      .select({ id: stockMovements.id })
+      .from(stockMovements)
+      .where(sql`${stockMovements.notes} LIKE 'Migrated%'`)
+      .limit(1);
+
+    if (existingMigrated.length > 0) {
+      console.log('[migrateExistingDataToMovements] Migration already completed, skipping');
+      return;
+    }
+
+    // Get all existing entries
+    const allEntries = await db
       .select({
+        id: inventoryEntries.id,
+        productId: inventoryEntries.productId,
+        userId: inventoryEntries.userId,
+        quantityUnits: inventoryEntries.quantityUnits,
+        batchNumber: inventoryEntries.batchNumber,
+        createdAt: inventoryEntries.createdAt,
+      })
+      .from(inventoryEntries)
+      .orderBy(inventoryEntries.createdAt);
+
+    // Create movements for each entry
+    for (const entry of allEntries) {
+      await db.insert(stockMovements).values({
+        productId: entry.productId,
+        userId: entry.userId,
+        movementType: 'ENTRY',
+        quantity: entry.quantityUnits,
+        referenceId: entry.id,
+        referenceType: 'ENTRY',
+        timestamp: entry.createdAt,
+        notes: `Migrated entry: ${entry.batchNumber}`,
+      });
+    }
+
+    // Get all existing closures
+    const allClosures = await db
+      .select({
+        id: dailyClosures.id,
         productId: dailyClosures.productId,
+        userId: dailyClosures.userId,
+        initialStock: dailyClosures.initialStock,
+        totalEntries: dailyClosures.totalEntries,
         physicalStock: dailyClosures.physicalStock,
         closureDate: dailyClosures.closureDate,
       })
       .from(dailyClosures)
-      .where(lt(dailyClosures.closureDate, today))
       .orderBy(dailyClosures.closureDate);
 
-    // Get the latest closure for each product (not today)
-    const latestClosures = new Map<number, { stock: number; date: string }>();
-    for (const closure of otherClosures) {
-      if (!latestClosures.has(closure.productId)) {
-        latestClosures.set(closure.productId, {
-          stock: parseFloat(closure.physicalStock),
-          date: closure.closureDate,
+    // Create movements for each closure adjustment
+    for (const closure of allClosures) {
+      const theoreticalStock = parseFloat(closure.initialStock) + parseFloat(closure.totalEntries);
+      const adjustment = parseFloat(closure.physicalStock) - theoreticalStock;
+
+      if (adjustment !== 0) {
+        await db.insert(stockMovements).values({
+          productId: closure.productId,
+          userId: closure.userId,
+          movementType: 'CLOSURE_ADJUSTMENT',
+          quantity: adjustment.toString(),
+          referenceId: closure.id,
+          referenceType: 'CLOSURE',
+          timestamp: new Date(closure.closureDate),
+          notes: `Migrated closure adjustment: theoretical ${theoreticalStock} -> physical ${closure.physicalStock}`,
         });
       }
     }
-
-    // Get all inventory entries
-    const allEntries = await db
-      .select({
-        productId: inventoryEntries.productId,
-        quantityUnits: inventoryEntries.quantityUnits,
-        entryDate: inventoryEntries.entryDate,
-      })
-      .from(inventoryEntries);
-
-    // Calculate stock for products without today's closure
-    for (const [productId, closure] of latestClosures) {
-      if (!stockMap.has(productId)) {
-        // Sum entries since the last closure
-        const entriesSinceClosure = allEntries
-          .filter(e => e.productId === productId && e.entryDate > closure.date)
-          .reduce((sum, e) => sum + parseFloat(e.quantityUnits), 0);
-        
-        stockMap.set(productId, closure.stock + entriesSinceClosure);
-      }
-    }
-
-    // For products with no closures at all, sum all entries
-    const productIdsWithClosures = new Set([...stockMap.keys()]);
-    const allProductIds = new Set(allEntries.map(e => e.productId));
-    
-    for (const productId of allProductIds) {
-      if (!productIdsWithClosures.has(productId)) {
-        const totalEntries = allEntries
-          .filter(e => e.productId === productId)
-          .reduce((sum, e) => sum + parseFloat(e.quantityUnits), 0);
-        stockMap.set(productId, totalEntries);
-      }
-    }
-
-    return stockMap;
   }
 
   async providerExists(providerId: number): Promise<boolean> {
