@@ -1,0 +1,1 @@
+ALTER TABLE "products" ADD COLUMN "presentation_quantity" numeric(10, 2) NOT NULL;

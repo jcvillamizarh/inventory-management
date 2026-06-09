@@ -1,0 +1,28 @@
+# DEPENDENCIAS DE NODE
+node_modules/
+
+# COMPILACIÓN, PRODUCCIÓN Y SALIDAS
+.next/
+out/
+dist/
+build/
+
+# VARIABLES DE ENTORNO Y SEGURIDAD (CRUCIAL)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# LOGS Y CACHÉS DE HERRAMIENTAS
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+yarn-error.log*
+.eslintcache
+
+# CONFIGURACIÓN DE EDITORES Y SISTEMA OPERATIVO
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
