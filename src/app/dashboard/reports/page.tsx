@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { exportInventoryToExcel, generateInventoryExportData } from '../../../lib/utils/excel-export.js';
+import { exportInventoryToExcel, generateInventoryExportData } from '@/lib/utils/excel-export';
 
 export default function ReportsPage() {
   const router = useRouter();
