@@ -201,4 +201,49 @@ describe('CreateProductUseCase', () => {
       },
     });
   });
+
+  it('should succeed with 201 for NO_APLICA type (packaging/supplies) and stock_minimo must be null', async () => {
+    const mockRepo = new MockProductRepository();
+    const useCase = new CreateProductUseCase(mockRepo);
+
+    const result = await useCase.execute({
+      name: 'Bolsas de Empaque',
+      category: 'MATERIAL_DE_EMPAQUE',
+      type: 'NO_APLICA',
+      unitBase: 'UNIDADES',
+      stockMinimo: null,
+      presentationQuantity: 100.0,
+    });
+
+    expect(result).toMatchObject({
+      statusCode: 201,
+      data: {
+        id: expect.any(Number),
+        name: 'Bolsas de Empaque',
+        category: 'MATERIAL_DE_EMPAQUE',
+        type: 'NO_APLICA',
+        unitBase: 'UNIDADES',
+        stockMinimo: null,
+        presentationQuantity: 100.0,
+      },
+    });
+  });
+
+  it('should fail with 400 if NO_APLICA type has stock_minimo set', async () => {
+    const mockRepo = new MockProductRepository();
+    const useCase = new CreateProductUseCase(mockRepo);
+
+    await expect(
+      useCase.execute({
+        name: 'Bolsas de Empaque',
+        category: 'MATERIAL_DE_EMPAQUE',
+        type: 'NO_APLICA',
+        unitBase: 'UNIDADES',
+        stockMinimo: 50.0,
+        presentationQuantity: 100.0,
+      })
+    ).rejects.toMatchObject({
+      statusCode: 400,
+    });
+  });
 });

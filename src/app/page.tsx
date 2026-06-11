@@ -37,8 +37,9 @@ export default function LoginPage() {
         return;
       }
 
-      // Store user session (in a real app, this would be a secure cookie/token)
-      localStorage.setItem('user', JSON.stringify(data));
+      // Session is now stored in a secure cookie by the server
+      // Set sessionStorage flag to track browser session
+      sessionStorage.setItem('sessionActive', 'true');
 
       // Redirect based on role
       if (data.role === 'CONSULTA' || data.role === 'consulta') {

@@ -9,10 +9,25 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     setMounted(true);
-    const userData = localStorage.getItem('user');
-    if (userData) {
-      setUser(JSON.parse(userData));
-    }
+    // Session is now stored in a secure cookie
+    // We need to fetch user data from the server or parse the cookie
+    // For now, we'll redirect to login if no session is found
+    const checkSession = async () => {
+      try {
+        const response = await fetch('/api/auth/session');
+        if (response.ok) {
+          const data = await response.json();
+          setUser(data);
+        } else {
+          // No valid session, redirect to login
+          window.location.href = '/';
+        }
+      } catch (error) {
+        window.location.href = '/';
+      }
+    };
+
+    checkSession();
   }, []);
 
   const isAdmin = user?.role === 'ADMINISTRADOR' || user?.role === 'admin';
@@ -20,8 +35,13 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const isConsulta = user?.role === 'CONSULTA' || user?.role === 'consulta';
   const canViewReports = isAdmin || isConsulta;
 
-  const handleLogout = () => {
-    localStorage.removeItem('user');
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      sessionStorage.removeItem('sessionActive');
+    } catch (error) {
+      // Ignore error, redirect anyway
+    }
     window.location.href = '/';
   };
 

@@ -11,8 +11,8 @@ export const products = pgTable('products', {
   presentationQuantity: numeric('presentation_quantity', { precision: 10, scale: 2 }).notNull(),
 }, (table) => ({
   categoryCheck: sql`CHECK (${table.category} IN ('MATERIA_PRIMA', 'PRODUCTO_TERMINADO', 'MATERIAL_DE_EMPAQUE', 'PRODUCTOS_L_D'))`,
-  typeCheck: sql`CHECK (${table.type} IN ('SECO_NO_PERECEDERO', 'PERECEDERO'))`,
+  typeCheck: sql`CHECK (${table.type} IN ('SECO_NO_PERECEDERO', 'PERECEDERO', 'NO_APLICA'))`,
   unitCheck: sql`CHECK (${table.unitBase} IN ('KILOGRAMOS', 'LITROS', 'UNIDADES', 'GRAMOS', 'MILILITROS'))`,
-  stockMinimoCheck: sql`CHECK ((type = 'SECO_NO_PERECEDERO' AND stock_minimo IS NOT NULL AND stock_minimo > 0) OR (type = 'PERECEDERO' AND stock_minimo IS NULL))`,
+  stockMinimoCheck: sql`CHECK ((type = 'SECO_NO_PERECEDERO' AND stock_minimo IS NOT NULL AND stock_minimo > 0) OR (type = 'PERECEDERO' AND stock_minimo IS NULL) OR (type = 'NO_APLICA' AND stock_minimo IS NULL))`,
   presentationQuantityCheck: sql`CHECK (presentation_quantity > 0)`,
 }));
