@@ -3,10 +3,11 @@ import { CreateProductUseCase } from '../../../modules/products/use-cases/create
 import { DrizzleProductRepository } from '../../../modules/products/infrastructure/products.drizzle.js';
 import { db } from '../../../lib/db/index.js';
 import { products } from '../../../lib/db/schema.js';
+import { asc } from 'drizzle-orm';
 
 export async function GET() {
   try {
-    const allProducts = await db.select().from(products);
+    const allProducts = await db.select().from(products).orderBy(asc(products.name));
     return NextResponse.json(allProducts, { status: 200 });
   } catch (error) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

@@ -22,7 +22,7 @@ export class GeneralInventoryReportUseCase {
   async execute(): Promise<GeneralInventoryItem[]> {
     const products = await this.productRepository.findAll();
     const stockMap = await this.inventoryRepository.getLatestPhysicalStockForAllProducts();
-    
+
     const report: GeneralInventoryItem[] = [];
 
     for (const product of products) {
@@ -41,6 +41,9 @@ export class GeneralInventoryReportUseCase {
         stockMinimo: product.stockMinimo,
       });
     }
+
+    // Sort alphabetically by product name
+    report.sort((a, b) => a.name.localeCompare(b.name));
 
     return report;
   }

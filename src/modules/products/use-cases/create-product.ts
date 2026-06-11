@@ -4,7 +4,7 @@ import type { IProductRepository } from '../products.repository.js';
 const createProductSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   category: z.enum(['MATERIA_PRIMA', 'PRODUCTO_TERMINADO', 'MATERIAL_DE_EMPAQUE', 'PRODUCTOS_L_D']),
-  type: z.enum(['SECO_NO_PERECEDERO', 'PERECEDERO']),
+  type: z.enum(['SECO_NO_PERECEDERO', 'PERECEDERO', 'NO_APLICA']),
   unitBase: z.enum(['KILOGRAMOS', 'LITROS', 'UNIDADES', 'GRAMOS', 'MILILITROS']),
   stockMinimo: z.number().nullable(),
   presentationQuantity: z.number().positive('Presentation quantity must be greater than 0'),
@@ -40,6 +40,14 @@ export class CreateProductUseCase {
       throw {
         statusCode: 400,
         message: 'Stock minimo must be null for perishable products',
+      };
+    }
+
+    // Business rule: If type is NO_APLICA, stockMinimo must be null
+    if (validatedInput.type === 'NO_APLICA' && validatedInput.stockMinimo !== null) {
+      throw {
+        statusCode: 400,
+        message: 'Stock minimo must be null for NO_APLICA type (packaging/supplies)',
       };
     }
 

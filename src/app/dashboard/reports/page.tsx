@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { exportInventoryToExcel, generateInventoryExportData } from '@/lib/utils/exportador';
 
 export default function ReportsPage() {
   const router = useRouter();
@@ -14,19 +15,27 @@ export default function ReportsPage() {
   const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
-    const userData = localStorage.getItem('user');
-    if (userData) {
-      const parsedUser = JSON.parse(userData);
-      setUser(parsedUser);
-      
-      const canViewReports = parsedUser.role === 'ADMINISTRADOR' || parsedUser.role === 'CONSULTA' || parsedUser.role === 'admin' || parsedUser.role === 'consulta';
-      
-      if (!canViewReports) {
-        router.push('/dashboard');
+    const checkSession = async () => {
+      try {
+        const response = await fetch('/api/auth/session');
+        if (response.ok) {
+          const data = await response.json();
+          setUser(data);
+
+          const canViewReports = data.role === 'ADMINISTRADOR' || data.role === 'CONSULTA' || data.role === 'admin' || data.role === 'consulta';
+
+          if (!canViewReports) {
+            router.push('/dashboard');
+          }
+        } else {
+          router.push('/');
+        }
+      } catch (error) {
+        router.push('/');
       }
-    } else {
-      router.push('/');
-    }
+    };
+
+    checkSession();
   }, [router]);
 
   useEffect(() => {
@@ -71,6 +80,23 @@ export default function ReportsPage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleExportToExcel = () => {
+    // Role protection: only ADMINISTRADOR can export
+    if (!user || (user.role !== 'ADMINISTRADOR' && user.role !== 'admin')) {
+      return;
+    }
+
+    // Filter data based on search term
+    const filteredData = generalInventory
+      .filter((item) => item.name.toLowerCase().includes(searchTerm.toLowerCase()));
+
+    // Transform data for export
+    const exportData = generateInventoryExportData(filteredData);
+
+    // Export to Excel
+    exportInventoryToExcel(exportData);
   };
 
   return (
@@ -224,19 +250,33 @@ export default function ReportsPage() {
               </div>
 
               <div className="mb-6">
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg className="h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
+                <div className="flex gap-3">
+                  <div className="relative flex-1">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <svg className="h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Buscar producto por nombre..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full pl-10 pr-4 py-3.5 text-base bg-slate-50 rounded-xl border-0 focus:ring-2 focus:ring-slate-900 transition-all duration-200"
+                    />
                   </div>
-                  <input
-                    type="text"
-                    placeholder="Buscar producto por nombre..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3.5 text-base bg-slate-50 rounded-xl border-0 focus:ring-2 focus:ring-slate-900 transition-all duration-200"
-                  />
+                  {user && (user.role === 'ADMINISTRADOR' || user.role === 'admin') && (
+                    <button
+                      onClick={handleExportToExcel}
+                      className="flex items-center space-x-2 px-5 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl transition-all duration-200 shadow-md hover:shadow-lg"
+                      title="Exportar a Excel"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      <span>Exportar Excel</span>
+                    </button>
+                  )}
                 </div>
               </div>
 

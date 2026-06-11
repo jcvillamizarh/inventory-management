@@ -20,22 +20,28 @@ export default function DailyClosurePage() {
   const [success, setSuccess] = useState('');
 
   useEffect(() => {
-    // Check if user is authenticated
-    const userData = localStorage.getItem('user');
-    if (!userData) {
-      router.push('/');
-      return;
-    }
+    const checkSession = async () => {
+      try {
+        const response = await fetch('/api/auth/session');
+        if (response.ok) {
+          const user = await response.json();
 
-    const user = JSON.parse(userData);
-    
-    // Check if user is CONSULTA and redirect to reports
-    if (user.role === 'CONSULTA' || user.role === 'consulta') {
-      router.push('/dashboard/reports');
-      return;
-    }
+          // Check if user is CONSULTA and redirect to reports
+          if (user.role === 'CONSULTA' || user.role === 'consulta') {
+            router.push('/dashboard/reports');
+            return;
+          }
 
-    fetchProducts();
+          fetchProducts();
+        } else {
+          router.push('/');
+        }
+      } catch (error) {
+        router.push('/');
+      }
+    };
+
+    checkSession();
   }, [router]);
 
   const fetchProducts = async () => {

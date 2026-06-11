@@ -2,7 +2,7 @@ export interface Product {
   id: number;
   name: string;
   category: 'MATERIA_PRIMA' | 'PRODUCTO_TERMINADO' | 'MATERIAL_DE_EMPAQUE' | 'PRODUCTOS_L_D';
-  type: 'SECO_NO_PERECEDERO' | 'PERECEDERO';
+  type: 'SECO_NO_PERECEDERO' | 'PERECEDERO' | 'NO_APLICA';
   unitBase: 'KILOGRAMOS' | 'LITROS' | 'UNIDADES' | 'GRAMOS' | 'MILILITROS';
   stockMinimo: number | null;
   presentationQuantity: number;

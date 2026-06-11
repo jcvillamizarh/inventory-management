@@ -30,17 +30,36 @@ type User = {
 
 export default function AdminPage() {
   const router = useRouter();
-  const user = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('user') || '{}') : null;
+  const [user, setUser] = useState<any>(null);
   const isAdmin = user?.role === 'ADMINISTRADOR' || user?.role === 'admin';
   const isConsulta = user?.role === 'CONSULTA' || user?.role === 'consulta';
 
   useEffect(() => {
-    if (isConsulta) {
-      router.push('/dashboard/reports');
-    } else if (!isAdmin) {
-      router.push('/dashboard');
-    }
-  }, [isAdmin, isConsulta, router]);
+    const checkSession = async () => {
+      try {
+        const response = await fetch('/api/auth/session');
+        if (response.ok) {
+          const userData = await response.json();
+          setUser(userData);
+
+          const userIsAdmin = userData.role === 'ADMINISTRADOR' || userData.role === 'admin';
+          const userIsConsulta = userData.role === 'CONSULTA' || userData.role === 'consulta';
+
+          if (userIsConsulta) {
+            router.push('/dashboard/reports');
+          } else if (!userIsAdmin) {
+            router.push('/dashboard');
+          }
+        } else {
+          router.push('/');
+        }
+      } catch (error) {
+        router.push('/');
+      }
+    };
+
+    checkSession();
+  }, [router]);
 
   const [activeTab, setActiveTab] = useState<'products' | 'providers' | 'users'>('products');
   const [isLoading, setIsLoading] = useState(false);
@@ -49,6 +68,7 @@ export default function AdminPage() {
 
   // Products state
   const [products, setProducts] = useState<Product[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [editingProductId, setEditingProductId] = useState<number | null>(null);
   const [productForm, setProductForm] = useState({
     name: '',
@@ -395,6 +415,7 @@ export default function AdminPage() {
                     >
                       <option value="SECO_NO_PERECEDERO">Seco No Perecedero</option>
                       <option value="PERECEDERO">Perecedero</option>
+                      <option value="NO_APLICA">No Aplica</option>
                     </select>
                   </div>
                   <div>
@@ -461,6 +482,31 @@ export default function AdminPage() {
                 </div>
               </form>
 
+              <div className="mb-4">
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Buscar producto..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full px-4 py-3 pl-12 text-base bg-slate-50 rounded-xl border-0 focus:ring-2 focus:ring-slate-900 transition-all duration-200"
+                  />
+                  <svg
+                    className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
+                  </svg>
+                </div>
+              </div>
+
               <div className="overflow-x-auto rounded-xl border border-slate-200">
                 <table className="min-w-full divide-y divide-slate-200">
                   <thead className="bg-slate-50">
@@ -475,7 +521,11 @@ export default function AdminPage() {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-slate-200">
-                    {products.map((product) => (
+                    {products
+                      .filter((product) =>
+                        product.name.toLowerCase().includes(searchTerm.toLowerCase())
+                      )
+                      .map((product) => (
                       <tr key={product.id} className="hover:bg-slate-50 transition-colors">
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-900">{product.name}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">{product.category}</td>

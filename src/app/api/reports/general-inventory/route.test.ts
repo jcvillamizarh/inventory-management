@@ -21,6 +21,24 @@ class MockProductRepository {
       stockMinimo: 10.0,
       presentationQuantity: 1.0,
     },
+    {
+      id: 3,
+      name: 'Carne molida',
+      category: 'MATERIA_PRIMA',
+      type: 'PERECEDERO',
+      unitBase: 'KILOGRAMOS',
+      stockMinimo: null,
+      presentationQuantity: 1.0,
+    },
+    {
+      id: 4,
+      name: 'Alas de pollo',
+      category: 'MATERIA_PRIMA',
+      type: 'PERECEDERO',
+      unitBase: 'KILOGRAMOS',
+      stockMinimo: null,
+      presentationQuantity: 1.0,
+    },
   ];
 
   async findAll() {
@@ -38,6 +56,16 @@ class MockInventoryRepository {
     {
       productId: 2,
       physicalStock: 50.0,
+      closureDate: new Date(),
+    },
+    {
+      productId: 3,
+      physicalStock: 30.0,
+      closureDate: new Date(),
+    },
+    {
+      productId: 4,
+      physicalStock: 15.0,
       closureDate: new Date(),
     },
   ];
@@ -94,7 +122,7 @@ describe('GET /api/reports/general-inventory', () => {
 
     expect(response.status).toBe(200);
     expect(Array.isArray(data)).toBe(true);
-    expect(data).toHaveLength(2);
+    expect(data).toHaveLength(4);
 
     const lemonProduct = data.find((p: any) => p.name === 'Zumo de limón');
     expect(lemonProduct).toBeDefined();
@@ -116,5 +144,17 @@ describe('GET /api/reports/general-inventory', () => {
       stockUnidades: expect.any(Number),
       totalNetoMedida: expect.any(Number),
     });
+  });
+
+  it('should return products sorted alphabetically by name', async () => {
+    const response = await GET();
+    const data = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(data).toHaveLength(4);
+    expect(data[0].name).toBe('Alas de pollo');
+    expect(data[1].name).toBe('Carne molida');
+    expect(data[2].name).toBe('Harina de Trigo');
+    expect(data[3].name).toBe('Zumo de limón');
   });
 });
