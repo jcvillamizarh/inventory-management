@@ -281,7 +281,7 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="max-w-6xl mx-auto w-full overflow-x-hidden">
       <div className="mb-8">
         <div className="flex items-center space-x-3 mb-2">
           <div className="w-12 h-12 bg-slate-900 rounded-xl flex items-center justify-center shadow-lg">
@@ -300,9 +300,9 @@ export default function AdminPage() {
       </div>
 
       {/* Sub-tabs */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 mb-6">
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 mb-6 w-full overflow-x-hidden">
         <div className="border-b border-slate-200">
-          <nav className="flex space-x-2 px-6" aria-label="Tabs">
+          <nav className="flex flex-col sm:flex-row space-x-0 sm:space-x-2 space-y-2 sm:space-y-0 px-6" aria-label="Tabs">
             <button
               onClick={() => setActiveTab('products')}
               className={`py-4 px-4 border-b-2 font-bold text-sm flex items-center space-x-2 transition-all duration-200 ${
@@ -378,8 +378,8 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              <form onSubmit={handleCreateProduct} className="bg-slate-50 rounded-xl p-6 mb-6 border border-slate-200">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <form onSubmit={handleCreateProduct} className="bg-slate-50 rounded-xl p-6 mb-6 border border-slate-200 w-full">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
                   <div>
                     <label className="block text-sm font-semibold text-slate-700 mb-2">Nombre</label>
                     <input
@@ -570,8 +570,8 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              <form onSubmit={handleCreateProvider} className="bg-slate-50 rounded-xl p-6 mb-6 border border-slate-200">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <form onSubmit={handleCreateProvider} className="bg-slate-50 rounded-xl p-6 mb-6 border border-slate-200 w-full">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
                   <div>
                     <label className="block text-sm font-semibold text-slate-700 mb-2">Nombre Comercial</label>
                     <input
@@ -661,8 +661,8 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              <form onSubmit={handleCreateUser} className="bg-slate-50 rounded-xl p-6 mb-6 border border-slate-200">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <form onSubmit={handleCreateUser} className="bg-slate-50 rounded-xl p-6 mb-6 border border-slate-200 w-full">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
                   <div>
                     <label className="block text-sm font-semibold text-slate-700 mb-2">Nombre de Usuario</label>
                     <input

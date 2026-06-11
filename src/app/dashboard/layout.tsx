@@ -54,11 +54,11 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 overflow-x-hidden">
       {/* Header */}
-      <header className="bg-slate-950 shadow-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+      <header className="bg-slate-950 shadow-sm sticky top-0 z-50 w-full">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+          <div className="flex justify-between items-center h-16 w-full">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-amber-500 rounded-xl flex items-center justify-center shadow-lg">
                 <svg className="w-6 h-6 text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -97,9 +97,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
       {/* Navigation - Action Cards */}
       {!isConsulta && (
-        <nav className="bg-white border-b border-slate-200">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex space-x-2 h-16 items-center">
+        <nav className="bg-white border-b border-slate-200 w-full">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+            <div className="flex flex-col sm:flex-row space-x-0 sm:space-x-2 space-y-2 sm:space-y-0 h-auto sm:h-16 items-center py-4 sm:py-0">
               <Link
                 href="/dashboard"
                 className="flex-1 max-w-xs flex items-center justify-center px-4 py-3 text-sm font-bold text-slate-700 bg-slate-50 hover:bg-amber-50 hover:text-amber-700 hover:border-amber-500 border-2 border-transparent rounded-xl transition-all duration-200"
@@ -147,7 +147,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       )}
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full overflow-x-hidden">
         {children}
       </main>
     </div>
