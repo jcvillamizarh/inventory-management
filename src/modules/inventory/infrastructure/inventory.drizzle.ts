@@ -13,7 +13,7 @@ export class DrizzleInventoryRepository implements IInventoryRepository {
         productId: entry.productId,
         userId: entry.userId,
         entryDate: entry.entryDate.toISOString().split('T')[0],
-        expirationDate: entry.expirationDate.toISOString().split('T')[0],
+        expirationDate: entry.expirationDate ? entry.expirationDate.toISOString().split('T')[0] : null,
         batchNumber: entry.batchNumber,
         quantityUnits: entry.quantityUnits.toString(),
       })
@@ -29,7 +29,7 @@ export class DrizzleInventoryRepository implements IInventoryRepository {
       quantity: savedEntry.quantityUnits,
       referenceId: savedEntry.id,
       referenceType: 'ENTRY',
-      notes: `Entry: ${savedEntry.batchNumber}`,
+      notes: `Entry: ${savedEntry.batchNumber || 'N/A'}`,
     });
 
     return {
@@ -38,7 +38,7 @@ export class DrizzleInventoryRepository implements IInventoryRepository {
       productId: savedEntry.productId,
       userId: savedEntry.userId,
       entryDate: new Date(savedEntry.entryDate),
-      expirationDate: new Date(savedEntry.expirationDate),
+      expirationDate: savedEntry.expirationDate ? new Date(savedEntry.expirationDate) : null,
       batchNumber: savedEntry.batchNumber,
       quantityUnits: parseFloat(savedEntry.quantityUnits),
       createdAt: savedEntry.createdAt,
