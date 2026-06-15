@@ -41,8 +41,8 @@ export const inventoryEntries = pgTable('inventory_entries', {
   productId: integer('product_id').notNull().references(() => products.id),
   userId: uuid('user_id').notNull().references(() => users.id),
   entryDate: date('entry_date').defaultNow().notNull(),
-  expirationDate: date('expiration_date').notNull(),
-  batchNumber: varchar('batch_number', { length: 50 }).notNull(),
+  expirationDate: date('expiration_date'),
+  batchNumber: varchar('batch_number', { length: 50 }),
   quantityUnits: numeric('quantity_units', { precision: 10, scale: 2 }).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });

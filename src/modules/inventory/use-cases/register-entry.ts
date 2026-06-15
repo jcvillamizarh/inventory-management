@@ -9,13 +9,17 @@ const registerEntrySchema = z.object({
     const date = typeof val === 'string' ? new Date(val) : val;
     return !isNaN(date.getTime());
   }, 'Entry date must be a valid date'),
-  expirationDate: z.string().or(z.date()).refine((val) => {
-    const date = typeof val === 'string' ? new Date(val) : val;
-    return !isNaN(date.getTime());
-  }, 'Expiration date must be a valid date'),
-  batchNumber: z.string().min(1, 'Batch number is required'),
+  expirationDate: z.union([z.string(), z.date(), z.null()]).nullable().optional().transform((val) => {
+    if (val === null || val === undefined || val === '') return null;
+    return val;
+  }),
+  batchNumber: z.string().nullable().optional().transform((val) => {
+    if (val === null || val === undefined || val === '') return null;
+    return val;
+  }),
   quantityUnits: z.number().positive('Quantity units must be a positive number'),
 }).refine((data) => {
+  if (!data.expirationDate) return true;
   const entryDate = typeof data.entryDate === 'string' ? new Date(data.entryDate) : data.entryDate;
   const expirationDate = typeof data.expirationDate === 'string' ? new Date(data.expirationDate) : data.expirationDate;
   return expirationDate >= entryDate;
@@ -41,7 +45,9 @@ export class RegisterMorningEntryUseCase {
 
     // Convert dates to Date objects if they are strings
     const entryDate = typeof validatedInput.entryDate === 'string' ? new Date(validatedInput.entryDate) : validatedInput.entryDate;
-    const expirationDate = typeof validatedInput.expirationDate === 'string' ? new Date(validatedInput.expirationDate) : validatedInput.expirationDate;
+    const expirationDate = validatedInput.expirationDate
+      ? (typeof validatedInput.expirationDate === 'string' ? new Date(validatedInput.expirationDate) : validatedInput.expirationDate)
+      : null;
 
     // Save entry to repository
     const entry = await this.inventoryRepository.saveEntry({
@@ -50,7 +56,7 @@ export class RegisterMorningEntryUseCase {
       userId: validatedInput.userId,
       entryDate,
       expirationDate,
-      batchNumber: validatedInput.batchNumber,
+      batchNumber: validatedInput.batchNumber || null,
       quantityUnits: validatedInput.quantityUnits,
     });
 

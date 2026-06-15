@@ -4,8 +4,8 @@ export interface InventoryEntry {
   productId: number;
   userId: string;
   entryDate: Date;
-  expirationDate: Date;
-  batchNumber: string;
+  expirationDate: Date | null;
+  batchNumber: string | null;
   quantityUnits: number;
   createdAt: Date;
 }

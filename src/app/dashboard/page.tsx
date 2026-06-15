@@ -74,8 +74,6 @@ export default function MorningEntryPage() {
     formData.providerId &&
     formData.productId &&
     formData.entryDate &&
-    formData.expirationDate &&
-    formData.batchNumber &&
     formData.quantityUnits;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -97,8 +95,8 @@ export default function MorningEntryPage() {
           productId: parseInt(formData.productId),
           userId: user.id,
           entryDate: formData.entryDate,
-          expirationDate: formData.expirationDate,
-          batchNumber: formData.batchNumber,
+          expirationDate: formData.expirationDate || null,
+          batchNumber: formData.batchNumber || null,
           quantityUnits: parseFloat(formData.quantityUnits),
         }),
       });
@@ -260,7 +258,7 @@ export default function MorningEntryPage() {
           {/* Expiration Date */}
           <div>
             <label htmlFor="expirationDate" className="block text-sm font-semibold text-slate-700 mb-2">
-              Fecha de Vencimiento
+              Fecha de Vencimiento (Opcional)
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -275,7 +273,6 @@ export default function MorningEntryPage() {
                 onChange={(e) => setFormData({ ...formData, expirationDate: e.target.value })}
                 className="w-full pl-12 pr-4 py-3.5 text-base bg-slate-50 rounded-xl border-0 focus:ring-2 focus:ring-slate-900 transition-all duration-200 placeholder:text-slate-400"
                 disabled={isLoading}
-                required
               />
             </div>
           </div>
@@ -283,7 +280,7 @@ export default function MorningEntryPage() {
           {/* Batch Number */}
           <div>
             <label htmlFor="batchNumber" className="block text-sm font-semibold text-slate-700 mb-2">
-              Lote
+              Lote (Opcional)
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -299,7 +296,6 @@ export default function MorningEntryPage() {
                 className="w-full pl-12 pr-4 py-3.5 text-base bg-slate-50 rounded-xl border-0 focus:ring-2 focus:ring-slate-900 transition-all duration-200 placeholder:text-slate-400"
                 placeholder="Ej: L1234"
                 disabled={isLoading}
-                required
               />
             </div>
           </div>

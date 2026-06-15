@@ -179,6 +179,37 @@ describe('POST /api/inventory/entries', () => {
       error: 'Invalid input data',
     });
   });
+
+  it('should return 201 and register entry with optional expiration_date and batch_number', async () => {
+    const request = new Request('http://localhost/api/inventory/entries', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        providerId: 1,
+        productId: 1,
+        userId: '550e8400-e29b-41d4-a716-446655440000',
+        entryDate: '2024-01-15',
+        expirationDate: null,
+        batchNumber: null,
+        quantityUnits: 50,
+      }),
+    });
+
+    const response = await POST(request);
+    const data = await response.json();
+
+    expect(response.status).toBe(201);
+    expect(data).toMatchObject({
+      id: expect.any(Number),
+      providerId: 1,
+      productId: 1,
+      userId: '550e8400-e29b-41d4-a716-446655440000',
+      entryDate: expect.any(String),
+      expirationDate: null,
+      batchNumber: null,
+      quantityUnits: 50,
+    });
+  });
 });
 
 describe('Role-based access control', () => {
