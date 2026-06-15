@@ -100,7 +100,7 @@ export default function ReportsPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-7xl mx-auto">
       <div className="mb-8">
         <div className="flex items-center space-x-3 mb-2">
           <div className="w-12 h-12 bg-slate-900 rounded-xl flex items-center justify-center shadow-lg">
@@ -288,8 +288,8 @@ export default function ReportsPage() {
                   </svg>
                 </div>
               ) : (
-                <div className="overflow-x-auto rounded-xl border border-slate-200">
-                  <table className="min-w-full divide-y divide-slate-200">
+                <div className="w-full overflow-x-auto rounded-xl border border-slate-200">
+                  <table className="w-full min-w-[800px] divide-y divide-slate-200 text-left">
                     <thead className="bg-slate-50">
                       <tr>
                         <th className="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
