@@ -289,7 +289,7 @@ export default function ReportsPage() {
                 </div>
               ) : (
                 <div className="w-full overflow-x-auto rounded-xl border border-slate-200">
-                  <table className="w-full min-w-[800px] divide-y divide-slate-200 text-left">
+                  <table className="w-full min-w-[1000px] divide-y divide-slate-200 text-left">
                     <thead className="bg-slate-50">
                       <tr>
                         <th className="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
