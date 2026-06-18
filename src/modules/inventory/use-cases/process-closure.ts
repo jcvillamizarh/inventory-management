@@ -2,9 +2,9 @@ import { z } from 'zod';
 import type { IInventoryRepository } from '../inventory.repository.js';
 
 const processClosureSchema = z.object({
-  productId: z.number().int().positive('Product ID must be a positive integer'),
+  productId: z.coerce.number().int().positive('Product ID must be a positive integer'),
   userId: z.string().uuid('User ID must be a valid UUID'),
-  physicalStock: z.number().positive('Physical stock must be a positive number'),
+  physicalStock: z.coerce.number().min(0, 'Physical stock cannot be negative'),
 });
 
 export class ProcessDailyClosureUseCase {

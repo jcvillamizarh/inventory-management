@@ -86,9 +86,10 @@ export default function DailyClosurePage() {
     setSuccess('');
     setIsLoading(true);
 
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-
     try {
+      const sessionResponse = await fetch('/api/auth/session');
+      const sessionUser = await sessionResponse.json();
+
       const response = await fetch('/api/inventory/closure', {
         method: 'POST',
         headers: {
@@ -96,7 +97,7 @@ export default function DailyClosurePage() {
         },
         body: JSON.stringify({
           productId: parseInt(formData.productId),
-          userId: user.id,
+          userId: sessionUser.id,
           physicalStock: parseFloat(formData.physicalStock),
         }),
       });

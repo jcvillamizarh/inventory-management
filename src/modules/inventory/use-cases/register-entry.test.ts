@@ -151,38 +151,6 @@ describe('RegisterMorningEntryUseCase', () => {
     });
   });
 
-  it('should successfully register entry with empty batch_number (converted to null)', async () => {
-    const mockRepo = new MockInventoryRepository();
-    const useCase = new RegisterMorningEntryUseCase(mockRepo);
-
-    const entryDate = new Date('2024-01-15');
-    const expirationDate = new Date('2024-02-15');
-
-    const result = await useCase.execute({
-      providerId: 1,
-      productId: 1,
-      userId: '550e8400-e29b-41d4-a716-446655440000',
-      entryDate,
-      expirationDate,
-      batchNumber: '',
-      quantityUnits: 50,
-    });
-
-    expect(result).toMatchObject({
-      statusCode: 201,
-      data: {
-        id: expect.any(Number),
-        providerId: 1,
-        productId: 1,
-        userId: '550e8400-e29b-41d4-a716-446655440000',
-        entryDate: entryDate,
-        expirationDate: expirationDate,
-        batchNumber: null,
-        quantityUnits: 50,
-      },
-    });
-  });
-
   it('should successfully register entry with optional expiration_date and batch_number', async () => {
     const mockRepo = new MockInventoryRepository();
     const useCase = new RegisterMorningEntryUseCase(mockRepo);

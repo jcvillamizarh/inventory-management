@@ -1,7 +1,7 @@
 import { db } from '../../../lib/db/index.js';
 import { inventoryEntries, dailyClosures } from './inventory.schema.js';
 import { providers, products, stockMovements } from '../../../lib/db/schema.js';
-import { eq, and, gte, gt, lt, sum, sql } from 'drizzle-orm';
+import { eq, and, gte, gt, lt, lte, desc, sum, sql } from 'drizzle-orm';
 import type { IInventoryRepository, InventoryEntry, DailyClosure } from '../inventory.repository.js';
 
 export class DrizzleInventoryRepository implements IInventoryRepository {
@@ -46,20 +46,21 @@ export class DrizzleInventoryRepository implements IInventoryRepository {
   }
 
   async getInitialStock(productId: number, date: Date): Promise<number> {
-    // Get the most recent closure before the current date
+    // Get the most recent closure before or on the current date
     const dateStr = date.toISOString().split('T')[0];
     const result = await db
       .select({ physicalStock: dailyClosures.physicalStock })
       .from(dailyClosures)
       .where(and(
         eq(dailyClosures.productId, productId),
-        lt(dailyClosures.closureDate, dateStr)
+        lte(dailyClosures.closureDate, dateStr)
       ))
-      .orderBy(dailyClosures.closureDate)
+      .orderBy(desc(dailyClosures.closureDate))
       .limit(1);
 
     if (result.length === 0) {
-      return 0; // No previous closure, initial stock is 0
+      // No previous closure, use latest physical stock from movements
+      return await this.getLatestPhysicalStock(productId);
     }
 
     return parseFloat(result[0].physicalStock);

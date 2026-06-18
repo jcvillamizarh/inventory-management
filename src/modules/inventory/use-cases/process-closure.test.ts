@@ -33,6 +33,22 @@ class MockInventoryRepository implements IInventoryRepository {
     return this.hasExistingValue;
   }
 
+  async getLatestPhysicalStock(productId: number): Promise<number> {
+    return 0;
+  }
+
+  async getLatestPhysicalStockForAllProducts(): Promise<Map<number, number>> {
+    return new Map();
+  }
+
+  async providerExists(providerId: number): Promise<boolean> {
+    return true;
+  }
+
+  async productExists(productId: number): Promise<boolean> {
+    return true;
+  }
+
   setInitialStock(value: number) {
     this.initialStockValue = value;
   }
@@ -128,6 +144,27 @@ describe('ProcessDailyClosureUseCase', () => {
       })
     ).rejects.toMatchObject({
       statusCode: 400,
+    });
+  });
+
+  it('should handle string input for physicalStock (HTML form sends strings)', async () => {
+    const mockRepo = new MockInventoryRepository();
+    mockRepo.setInitialStock(10);
+    mockRepo.setTotalEntries(90);
+    const useCase = new ProcessDailyClosureUseCase(mockRepo);
+
+    const result = await useCase.execute({
+      productId: 1,
+      userId: '550e8400-e29b-41d4-a716-446655440000',
+      physicalStock: '38' as any, // Simulating HTML input sending string
+    });
+
+    expect(result).toMatchObject({
+      statusCode: 200,
+      data: {
+        physicalStock: 38,
+        calculatedConsumption: 62.0,
+      },
     });
   });
 });
