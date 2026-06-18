@@ -156,16 +156,14 @@ export default function AdminPage() {
     setIsLoading(true);
 
     try {
-      const stockMinimoValue = productForm.type === 'SECO_NO_PERECEDERO' 
-        ? (productForm.stockMinimo ? parseFloat(productForm.stockMinimo) : null)
-        : null;
+      const stockMinimoValue = parseFloat(productForm.stockMinimo);
       
       const payload = {
         name: productForm.name,
         category: productForm.category,
         type: productForm.type,
         unitBase: productForm.unit,
-        stockMinimo: stockMinimoValue !== null && isNaN(stockMinimoValue) ? null : stockMinimoValue,
+        stockMinimo: isNaN(stockMinimoValue) ? 0 : stockMinimoValue,
         presentationQuantity: parseFloat(productForm.presentationQuantity),
       };
 
@@ -447,20 +445,19 @@ export default function AdminPage() {
                       required
                     />
                   </div>
-                  {productForm.type === 'SECO_NO_PERECEDERO' && (
-                    <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-2">Stock Mínimo</label>
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={productForm.stockMinimo}
-                        onChange={(e) => setProductForm({ ...productForm, stockMinimo: e.target.value })}
-                        className="w-full px-4 py-3.5 text-base bg-slate-50 rounded-xl border-0 focus:ring-2 focus:ring-slate-900 transition-all duration-200"
-                        required
-                      />
-                    </div>
-                  )}
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">Stock Mínimo</label>
+                    <input
+                      type="number"
+                      min="0.01"
+                      step="0.01"
+                      value={productForm.stockMinimo}
+                      onChange={(e) => setProductForm({ ...productForm, stockMinimo: e.target.value })}
+                      className="w-full px-4 py-3.5 text-base bg-slate-50 rounded-xl border-0 focus:ring-2 focus:ring-slate-900 transition-all duration-200"
+                      placeholder="Ej: 10"
+                      required
+                    />
+                  </div>
                 </div>
                 <div className="mt-4 flex gap-2">
                   <button

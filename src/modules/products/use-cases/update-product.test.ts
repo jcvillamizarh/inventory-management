@@ -10,6 +10,7 @@ describe('UpdateProductUseCase', () => {
     mockRepo = {
       findById: async () => null,
       findByName: async () => null,
+      findAll: async () => [],
       save: async () => ({
         id: 1,
         name: 'Test Product',
@@ -28,6 +29,7 @@ describe('UpdateProductUseCase', () => {
         stockMinimo: 15,
         presentationQuantity: 2,
       }),
+      delete: async () => true,
     } as IProductRepository;
 
     useCase = new UpdateProductUseCase(mockRepo);
@@ -117,41 +119,88 @@ describe('UpdateProductUseCase', () => {
     });
   });
 
-  it('should validate stockMinimo for SECO_NO_PERECEDERO type', async () => {
+  it('should accept stockMinimo for PERECEDERO type', async () => {
     mockRepo.findById = async () => ({
       id: 1,
       name: 'Old Name',
       category: 'MATERIA_PRIMA',
-      type: 'SECO_NO_PERECEDERO',
+      type: 'PERECEDERO',
+      unitBase: 'KILOGRAMOS',
+      stockMinimo: 5,
+      presentationQuantity: 1,
+    });
+
+    mockRepo.update = async () => ({
+      id: 1,
+      name: 'Updated Product',
+      category: 'MATERIA_PRIMA',
+      type: 'PERECEDERO',
       unitBase: 'KILOGRAMOS',
       stockMinimo: 10,
-      presentationQuantity: 1,
+      presentationQuantity: 2,
     });
 
     const input = {
       id: 1,
       name: 'Updated Product',
       category: 'MATERIA_PRIMA',
-      type: 'SECO_NO_PERECEDERO',
+      type: 'PERECEDERO',
       unitBase: 'KILOGRAMOS',
-      stockMinimo: null,
+      stockMinimo: 10,
       presentationQuantity: 2,
     };
 
-    await expect(useCase.execute(input)).rejects.toEqual({
-      statusCode: 400,
-      message: 'Stock minimo is required and must be positive for dry products',
-    });
+    const result = await useCase.execute(input);
+
+    expect(result.statusCode).toBe(200);
+    expect(result.data.stockMinimo).toBe(10);
   });
 
-  it('should validate stockMinimo for PERECEDERO type', async () => {
+  it('should accept stockMinimo for NO_APLICA type', async () => {
+    mockRepo.findById = async () => ({
+      id: 1,
+      name: 'Old Name',
+      category: 'MATERIAL_DE_EMPAQUE',
+      type: 'NO_APLICA',
+      unitBase: 'UNIDADES',
+      stockMinimo: 50,
+      presentationQuantity: 1,
+    });
+
+    mockRepo.update = async () => ({
+      id: 1,
+      name: 'Updated Product',
+      category: 'MATERIAL_DE_EMPAQUE',
+      type: 'NO_APLICA',
+      unitBase: 'UNIDADES',
+      stockMinimo: 100,
+      presentationQuantity: 1,
+    });
+
+    const input = {
+      id: 1,
+      name: 'Updated Product',
+      category: 'MATERIAL_DE_EMPAQUE',
+      type: 'NO_APLICA',
+      unitBase: 'UNIDADES',
+      stockMinimo: 100,
+      presentationQuantity: 1,
+    };
+
+    const result = await useCase.execute(input);
+
+    expect(result.statusCode).toBe(200);
+    expect(result.data.stockMinimo).toBe(100);
+  });
+
+  it('should require stockMinimo to be greater than 0 for all types', async () => {
     mockRepo.findById = async () => ({
       id: 1,
       name: 'Old Name',
       category: 'MATERIA_PRIMA',
-      type: 'PERECEDERO',
+      type: 'SECO_NO_PERECEDERO',
       unitBase: 'KILOGRAMOS',
-      stockMinimo: null,
+      stockMinimo: 10,
       presentationQuantity: 1,
     });
 
@@ -159,15 +208,15 @@ describe('UpdateProductUseCase', () => {
       id: 1,
       name: 'Updated Product',
       category: 'MATERIA_PRIMA',
-      type: 'PERECEDERO',
+      type: 'SECO_NO_PERECEDERO',
       unitBase: 'KILOGRAMOS',
-      stockMinimo: 10,
+      stockMinimo: 0,
       presentationQuantity: 2,
     };
 
     await expect(useCase.execute(input)).rejects.toEqual({
       statusCode: 400,
-      message: 'Stock minimo must be null for perishable products',
+      message: 'Stock minimo must be greater than 0',
     });
   });
 });

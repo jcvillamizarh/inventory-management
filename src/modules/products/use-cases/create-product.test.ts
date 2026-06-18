@@ -9,6 +9,14 @@ class MockProductRepository implements IProductRepository {
     return this.products.find(p => p.name === name) || null;
   }
 
+  async findById(id: number): Promise<Product | null> {
+    return this.products.find(p => p.id === id) || null;
+  }
+
+  async findAll(): Promise<Product[]> {
+    return this.products;
+  }
+
   async save(product: Omit<Product, 'id'>): Promise<Product> {
     const newProduct: Product = {
       id: this.products.length + 1,
@@ -16,6 +24,24 @@ class MockProductRepository implements IProductRepository {
     };
     this.products.push(newProduct);
     return newProduct;
+  }
+
+  async update(id: number, product: Partial<Omit<Product, 'id'>>): Promise<Product | null> {
+    const index = this.products.findIndex(p => p.id === id);
+    if (index !== -1) {
+      this.products[index] = { ...this.products[index], ...product };
+      return this.products[index];
+    }
+    return null;
+  }
+
+  async delete(id: number): Promise<boolean> {
+    const index = this.products.findIndex(p => p.id === id);
+    if (index !== -1) {
+      this.products.splice(index, 1);
+      return true;
+    }
+    return false;
   }
 
   clear() {
@@ -115,25 +141,25 @@ describe('CreateProductUseCase', () => {
     });
   });
 
-  it('should fail with 400 if dry product has no stock_minimo or negative value', async () => {
+  it('should fail with 400 if product has stock_minimo of 0 or negative value', async () => {
     const mockRepo = new MockProductRepository();
     const useCase = new CreateProductUseCase(mockRepo);
 
-    // Dry product without stock_minimo
+    // Product with zero stock_minimo
     await expect(
       useCase.execute({
         name: 'Harina de Trigo',
         category: 'MATERIA_PRIMA',
         type: 'SECO_NO_PERECEDERO',
         unitBase: 'KILOGRAMOS',
-        stockMinimo: null,
+        stockMinimo: 0,
         presentationQuantity: 2.0,
       })
     ).rejects.toMatchObject({
       statusCode: 400,
     });
 
-    // Dry product with negative stock_minimo
+    // Product with negative stock_minimo
     await expect(
       useCase.execute({
         name: 'Harina de Trigo',
@@ -175,7 +201,7 @@ describe('CreateProductUseCase', () => {
     });
   });
 
-  it('should succeed with 201 for perishable product and stock_minimo must be null', async () => {
+  it('should succeed with 201 for perishable product with valid stock_minimo', async () => {
     const mockRepo = new MockProductRepository();
     const useCase = new CreateProductUseCase(mockRepo);
 
@@ -184,7 +210,7 @@ describe('CreateProductUseCase', () => {
       category: 'MATERIA_PRIMA',
       type: 'PERECEDERO',
       unitBase: 'KILOGRAMOS',
-      stockMinimo: null,
+      stockMinimo: 5.0,
       presentationQuantity: 1.0,
     });
 
@@ -196,13 +222,13 @@ describe('CreateProductUseCase', () => {
         category: 'MATERIA_PRIMA',
         type: 'PERECEDERO',
         unitBase: 'KILOGRAMOS',
-        stockMinimo: null,
+        stockMinimo: 5.0,
         presentationQuantity: 1.0,
       },
     });
   });
 
-  it('should succeed with 201 for NO_APLICA type (packaging/supplies) and stock_minimo must be null', async () => {
+  it('should succeed with 201 for NO_APLICA type (packaging/supplies) with valid stock_minimo', async () => {
     const mockRepo = new MockProductRepository();
     const useCase = new CreateProductUseCase(mockRepo);
 
@@ -211,7 +237,7 @@ describe('CreateProductUseCase', () => {
       category: 'MATERIAL_DE_EMPAQUE',
       type: 'NO_APLICA',
       unitBase: 'UNIDADES',
-      stockMinimo: null,
+      stockMinimo: 50.0,
       presentationQuantity: 100.0,
     });
 
@@ -223,27 +249,9 @@ describe('CreateProductUseCase', () => {
         category: 'MATERIAL_DE_EMPAQUE',
         type: 'NO_APLICA',
         unitBase: 'UNIDADES',
-        stockMinimo: null,
-        presentationQuantity: 100.0,
-      },
-    });
-  });
-
-  it('should fail with 400 if NO_APLICA type has stock_minimo set', async () => {
-    const mockRepo = new MockProductRepository();
-    const useCase = new CreateProductUseCase(mockRepo);
-
-    await expect(
-      useCase.execute({
-        name: 'Bolsas de Empaque',
-        category: 'MATERIAL_DE_EMPAQUE',
-        type: 'NO_APLICA',
-        unitBase: 'UNIDADES',
         stockMinimo: 50.0,
         presentationQuantity: 100.0,
-      })
-    ).rejects.toMatchObject({
-      statusCode: 400,
+      },
     });
   });
 });

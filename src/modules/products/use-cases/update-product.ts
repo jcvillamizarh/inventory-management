@@ -7,7 +7,7 @@ const updateProductSchema = z.object({
   category: z.enum(['MATERIA_PRIMA', 'PRODUCTO_TERMINADO', 'MATERIAL_DE_EMPAQUE', 'PRODUCTOS_L_D']),
   type: z.enum(['SECO_NO_PERECEDERO', 'PERECEDERO', 'NO_APLICA']),
   unitBase: z.enum(['KILOGRAMOS', 'LITROS', 'UNIDADES', 'GRAMOS', 'MILILITROS']),
-  stockMinimo: z.number().nullable(),
+  stockMinimo: z.number().min(0, 'Stock minimo must be 0 or greater'),
   presentationQuantity: z.number().positive('Presentation quantity must be greater than 0'),
 });
 
@@ -46,29 +46,11 @@ export class UpdateProductUseCase {
       }
     }
 
-    // Business rule: If type is SECO_NO_PERECEDERO, stockMinimo must be positive
-    if (validatedInput.type === 'SECO_NO_PERECEDERO') {
-      if (validatedInput.stockMinimo === null || validatedInput.stockMinimo <= 0) {
-        throw {
-          statusCode: 400,
-          message: 'Stock minimo is required and must be positive for dry products',
-        };
-      }
-    }
-
-    // Business rule: If type is PERECEDERO, stockMinimo must be null
-    if (validatedInput.type === 'PERECEDERO' && validatedInput.stockMinimo !== null) {
+    // Business rule: stockMinimo must be positive for all product types
+    if (validatedInput.stockMinimo <= 0) {
       throw {
         statusCode: 400,
-        message: 'Stock minimo must be null for perishable products',
-      };
-    }
-
-    // Business rule: If type is NO_APLICA, stockMinimo must be null
-    if (validatedInput.type === 'NO_APLICA' && validatedInput.stockMinimo !== null) {
-      throw {
-        statusCode: 400,
-        message: 'Stock minimo must be null for NO_APLICA type (packaging/supplies)',
+        message: 'Stock minimo must be greater than 0',
       };
     }
 
@@ -81,6 +63,13 @@ export class UpdateProductUseCase {
       stockMinimo: validatedInput.stockMinimo,
       presentationQuantity: validatedInput.presentationQuantity,
     });
+
+    if (!product) {
+      throw {
+        statusCode: 404,
+        message: 'Product not found',
+      };
+    }
 
     return {
       statusCode: 200,

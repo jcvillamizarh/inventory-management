@@ -82,7 +82,7 @@ describe('POST /api/products', () => {
     });
   });
 
-  it('should return 201 and created perishable product with stock_minimo as null', async () => {
+  it('should return 201 and created perishable product with valid stock_minimo', async () => {
     const request = new Request('http://localhost/api/products', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -91,7 +91,7 @@ describe('POST /api/products', () => {
         category: 'MATERIA_PRIMA',
         type: 'PERECEDERO',
         unitBase: 'KILOGRAMOS',
-        stockMinimo: null,
+        stockMinimo: 5.0,
         presentationQuantity: 1.0,
       }),
     });
@@ -106,7 +106,7 @@ describe('POST /api/products', () => {
       category: 'MATERIA_PRIMA',
       type: 'PERECEDERO',
       unitBase: 'KILOGRAMOS',
-      stockMinimo: null,
+      stockMinimo: 5.0,
       presentationQuantity: 1.0,
     });
   });
@@ -134,7 +134,7 @@ describe('POST /api/products', () => {
     });
   });
 
-  it('should return 400 when dry product has no stock_minimo or negative value', async () => {
+  it('should return 400 when product has stock_minimo of 0 or negative value', async () => {
     const request = new Request('http://localhost/api/products', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -143,7 +143,7 @@ describe('POST /api/products', () => {
         category: 'MATERIA_PRIMA',
         type: 'SECO_NO_PERECEDERO',
         unitBase: 'KILOGRAMOS',
-        stockMinimo: null,
+        stockMinimo: 0,
         presentationQuantity: 2.0,
       }),
     });
@@ -153,7 +153,7 @@ describe('POST /api/products', () => {
 
     expect(response.status).toBe(400);
     expect(data).toMatchObject({
-      error: 'Stock minimo is required and must be positive for dry products',
+      error: 'Stock minimo must be greater than 0',
     });
   });
 
