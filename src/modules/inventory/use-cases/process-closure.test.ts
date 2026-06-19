@@ -105,24 +105,6 @@ describe('ProcessDailyClosureUseCase', () => {
     });
   });
 
-  it('should fail with 409 when closure already exists for product on current date', async () => {
-    const mockRepo = new MockInventoryRepository();
-    mockRepo.setCurrentStock(10);
-    mockRepo.setHasExisting(true);
-    const useCase = new ProcessDailyClosureUseCase(mockRepo);
-
-    await expect(
-      useCase.execute({
-        productId: 1,
-        userId: '550e8400-e29b-41d4-a716-446655440000',
-        physicalStock: 12,
-      })
-    ).rejects.toMatchObject({
-      statusCode: 409,
-      message: 'Closure already exists for this product on this date',
-    });
-  });
-
   it('should fail with 400 for invalid input (negative physical_stock)', async () => {
     const mockRepo = new MockInventoryRepository();
     mockRepo.setCurrentStock(10);
@@ -174,6 +156,49 @@ describe('ProcessDailyClosureUseCase', () => {
       statusCode: 200,
       data: {
         physicalStock: 75,
+        calculatedConsumption: 1.0,
+      },
+    });
+  });
+
+  it('should allow multiple closures for the same product on the same day', async () => {
+    const mockRepo = new MockInventoryRepository();
+    mockRepo.setCurrentStock(100); // Current stock = 100
+    const useCase = new ProcessDailyClosureUseCase(mockRepo);
+
+    // First closure
+    const result1 = await useCase.execute({
+      productId: 1,
+      userId: '550e8400-e29b-41d4-a716-446655440000',
+      physicalStock: 75,
+    });
+
+    expect(result1).toMatchObject({
+      statusCode: 200,
+      data: {
+        initialStock: 100,
+        totalEntries: 0,
+        physicalStock: 75,
+        calculatedConsumption: 25.0,
+      },
+    });
+
+    // Update mock to reflect new stock after first closure
+    mockRepo.setCurrentStock(75);
+
+    // Second closure on the same day - should NOT return 409
+    const result2 = await useCase.execute({
+      productId: 1,
+      userId: '550e8400-e29b-41d4-a716-446655440000',
+      physicalStock: 74,
+    });
+
+    expect(result2).toMatchObject({
+      statusCode: 200,
+      data: {
+        initialStock: 75,
+        totalEntries: 0,
+        physicalStock: 74,
         calculatedConsumption: 1.0,
       },
     });

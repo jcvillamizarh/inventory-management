@@ -128,29 +128,6 @@ describe('POST /api/inventory/closure', () => {
     });
   });
 
-  it('should return 409 when closure already exists', async () => {
-    mockRepo.setCurrentStock(10);
-    mockRepo.setHasExisting(true);
-
-    const request = new Request('http://localhost/api/inventory/closure', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        productId: 1,
-        userId: '550e8400-e29b-41d4-a716-446655440000',
-        physicalStock: 12,
-      }),
-    });
-
-    const response = await POST(request);
-    const data = await response.json();
-
-    expect(response.status).toBe(409);
-    expect(data).toMatchObject({
-      error: 'Closure already exists for this product on this date',
-    });
-  });
-
   it('should return 400 for invalid input', async () => {
     mockRepo.setCurrentStock(10);
 
@@ -194,6 +171,57 @@ describe('POST /api/inventory/closure', () => {
       initialStock: 76,
       totalEntries: 0,
       physicalStock: 75,
+      calculatedConsumption: 1.0,
+    });
+  });
+
+  it('should allow multiple closures for the same product on the same day', async () => {
+    mockRepo.setCurrentStock(100); // Current stock = 100
+
+    // First closure
+    const request1 = new Request('http://localhost/api/inventory/closure', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        productId: 1,
+        userId: '550e8400-e29b-41d4-a716-446655440000',
+        physicalStock: 75,
+      }),
+    });
+
+    const response1 = await POST(request1);
+    const data1 = await response1.json();
+
+    expect(response1.status).toBe(200);
+    expect(data1).toMatchObject({
+      initialStock: 100,
+      totalEntries: 0,
+      physicalStock: 75,
+      calculatedConsumption: 25.0,
+    });
+
+    // Update mock to reflect new stock after first closure
+    mockRepo.setCurrentStock(75);
+
+    // Second closure on the same day - should NOT return 409
+    const request2 = new Request('http://localhost/api/inventory/closure', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        productId: 1,
+        userId: '550e8400-e29b-41d4-a716-446655440000',
+        physicalStock: 74,
+      }),
+    });
+
+    const response2 = await POST(request2);
+    const data2 = await response2.json();
+
+    expect(response2.status).toBe(200);
+    expect(data2).toMatchObject({
+      initialStock: 75,
+      totalEntries: 0,
+      physicalStock: 74,
       calculatedConsumption: 1.0,
     });
   });

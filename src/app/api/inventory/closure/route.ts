@@ -22,9 +22,6 @@ export async function POST(request: NextRequest) {
     if (error.statusCode === 400) {
       return NextResponse.json({ error: error.message || 'Invalid input data' }, { status: 400 });
     }
-    if (error.statusCode === 409) {
-      return NextResponse.json({ error: error.message || 'Closure already exists for this product on this date' }, { status: 409 });
-    }
     if (error.statusCode === 422) {
       return NextResponse.json({ error: error.message || 'Physical stock cannot exceed available stock' }, { status: 422 });
     }

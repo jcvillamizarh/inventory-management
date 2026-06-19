@@ -24,18 +24,6 @@ export class ProcessDailyClosureUseCase {
 
     const currentDate = new Date();
 
-    // Check if closure already exists for this product on current date
-    const hasExisting = await this.inventoryRepository.hasExistingClosure(
-      validatedInput.productId,
-      currentDate
-    );
-    if (hasExisting) {
-      throw {
-        statusCode: 409,
-        message: 'Closure already exists for this product on this date',
-      };
-    }
-
     // Get current stock from latest physical stock (simplified logic)
     const currentStock = await this.inventoryRepository.getLatestPhysicalStock(
       validatedInput.productId
