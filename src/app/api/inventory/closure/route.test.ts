@@ -7,8 +7,7 @@ vi.mock('next/cache', () => ({
 
 // Mock the DrizzleInventoryRepository
 class MockDrizzleInventoryRepository {
-  private initialStockValue: number = 0;
-  private totalEntriesValue: number = 0;
+  private currentStockValue: number = 0;
   private hasExistingValue: boolean = false;
 
   async saveEntry(entry: any): Promise<any> {
@@ -16,11 +15,11 @@ class MockDrizzleInventoryRepository {
   }
 
   async getInitialStock(productId: number, date: Date): Promise<number> {
-    return this.initialStockValue;
+    return this.currentStockValue;
   }
 
   async getTotalEntriesForDay(productId: number, date: Date): Promise<number> {
-    return this.totalEntriesValue;
+    return 0;
   }
 
   async saveClosure(closure: any): Promise<any> {
@@ -32,12 +31,12 @@ class MockDrizzleInventoryRepository {
   }
 
   async getLatestPhysicalStock(productId: number): Promise<number> {
-    return this.initialStockValue + this.totalEntriesValue;
+    return this.currentStockValue;
   }
 
   async getLatestPhysicalStockForAllProducts(): Promise<Map<number, number>> {
     const map = new Map();
-    map.set(1, this.initialStockValue + this.totalEntriesValue);
+    map.set(1, this.currentStockValue);
     return map;
   }
 
@@ -49,12 +48,8 @@ class MockDrizzleInventoryRepository {
     return true;
   }
 
-  setInitialStock(value: number) {
-    this.initialStockValue = value;
-  }
-
-  setTotalEntries(value: number) {
-    this.totalEntriesValue = value;
+  setCurrentStock(value: number) {
+    this.currentStockValue = value;
   }
 
   setHasExisting(value: boolean) {
@@ -62,8 +57,7 @@ class MockDrizzleInventoryRepository {
   }
 
   clear() {
-    this.initialStockValue = 0;
-    this.totalEntriesValue = 0;
+    this.currentStockValue = 0;
     this.hasExistingValue = false;
   }
 }
@@ -88,8 +82,7 @@ describe('POST /api/inventory/closure', () => {
   });
 
   it('should return 200 and calculate consumption correctly', async () => {
-    mockRepo.setInitialStock(10);
-    mockRepo.setTotalEntries(90);
+    mockRepo.setCurrentStock(100); // Current stock = 100
 
     const request = new Request('http://localhost/api/inventory/closure', {
       method: 'POST',
@@ -106,16 +99,15 @@ describe('POST /api/inventory/closure', () => {
 
     expect(response.status).toBe(200);
     expect(data).toMatchObject({
-      initialStock: 10,
-      totalEntries: 90,
+      initialStock: 100,
+      totalEntries: 0,
       physicalStock: 12,
       calculatedConsumption: 88.0,
     });
   });
 
-  it('should return 422 when physical_stock exceeds available stock', async () => {
-    mockRepo.setInitialStock(10);
-    mockRepo.setTotalEntries(40); // Total available = 50
+  it('should return 422 when physical_stock exceeds current stock', async () => {
+    mockRepo.setCurrentStock(50); // Current stock = 50
 
     const request = new Request('http://localhost/api/inventory/closure', {
       method: 'POST',
@@ -123,7 +115,7 @@ describe('POST /api/inventory/closure', () => {
       body: JSON.stringify({
         productId: 1,
         userId: '550e8400-e29b-41d4-a716-446655440000',
-        physicalStock: 60, // More than available (50)
+        physicalStock: 60, // More than current (50)
       }),
     });
 
@@ -137,8 +129,7 @@ describe('POST /api/inventory/closure', () => {
   });
 
   it('should return 409 when closure already exists', async () => {
-    mockRepo.setInitialStock(10);
-    mockRepo.setTotalEntries(90);
+    mockRepo.setCurrentStock(10);
     mockRepo.setHasExisting(true);
 
     const request = new Request('http://localhost/api/inventory/closure', {
@@ -161,8 +152,7 @@ describe('POST /api/inventory/closure', () => {
   });
 
   it('should return 400 for invalid input', async () => {
-    mockRepo.setInitialStock(10);
-    mockRepo.setTotalEntries(90);
+    mockRepo.setCurrentStock(10);
 
     const request = new Request('http://localhost/api/inventory/closure', {
       method: 'POST',
@@ -180,6 +170,31 @@ describe('POST /api/inventory/closure', () => {
     expect(response.status).toBe(400);
     expect(data).toMatchObject({
       error: 'Invalid input data',
+    });
+  });
+
+  it('should handle string numeric values correctly (string coercion bug)', async () => {
+    mockRepo.setCurrentStock(76); // Current stock = 76
+
+    const request = new Request('http://localhost/api/inventory/closure', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        productId: 1,
+        userId: '550e8400-e29b-41d4-a716-446655440000',
+        physicalStock: '75', // String value, less than current (76)
+      }),
+    });
+
+    const response = await POST(request);
+    const data = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(data).toMatchObject({
+      initialStock: 76,
+      totalEntries: 0,
+      physicalStock: 75,
+      calculatedConsumption: 1.0,
     });
   });
 });

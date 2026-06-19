@@ -127,7 +127,7 @@ export default function DailyClosurePage() {
   };
 
   const availableStock = calculatedData.initialStock;
-  const potentialConsumption = availableStock - parseFloat(formData.physicalStock || '0');
+  const potentialConsumption = availableStock - Number(formData.physicalStock || 0);
 
   return (
     <div className="max-w-2xl mx-auto">

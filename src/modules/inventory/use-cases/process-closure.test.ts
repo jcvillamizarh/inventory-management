@@ -4,8 +4,7 @@ import type { IInventoryRepository } from '../inventory.repository.js';
 
 class MockInventoryRepository implements IInventoryRepository {
   private closures: any[] = [];
-  private initialStockValue: number = 0;
-  private totalEntriesValue: number = 0;
+  private currentStockValue: number = 0;
   private hasExistingValue: boolean = false;
 
   async saveEntry(entry: any): Promise<any> {
@@ -13,11 +12,11 @@ class MockInventoryRepository implements IInventoryRepository {
   }
 
   async getInitialStock(productId: number, date: Date): Promise<number> {
-    return this.initialStockValue;
+    return this.currentStockValue;
   }
 
   async getTotalEntriesForDay(productId: number, date: Date): Promise<number> {
-    return this.totalEntriesValue;
+    return 0;
   }
 
   async saveClosure(closure: any): Promise<any> {
@@ -34,11 +33,13 @@ class MockInventoryRepository implements IInventoryRepository {
   }
 
   async getLatestPhysicalStock(productId: number): Promise<number> {
-    return 0;
+    return this.currentStockValue;
   }
 
   async getLatestPhysicalStockForAllProducts(): Promise<Map<number, number>> {
-    return new Map();
+    const map = new Map();
+    map.set(1, this.currentStockValue);
+    return map;
   }
 
   async providerExists(providerId: number): Promise<boolean> {
@@ -49,12 +50,8 @@ class MockInventoryRepository implements IInventoryRepository {
     return true;
   }
 
-  setInitialStock(value: number) {
-    this.initialStockValue = value;
-  }
-
-  setTotalEntries(value: number) {
-    this.totalEntriesValue = value;
+  setCurrentStock(value: number) {
+    this.currentStockValue = value;
   }
 
   setHasExisting(value: boolean) {
@@ -63,17 +60,15 @@ class MockInventoryRepository implements IInventoryRepository {
 
   clear() {
     this.closures = [];
-    this.initialStockValue = 0;
-    this.totalEntriesValue = 0;
+    this.currentStockValue = 0;
     this.hasExistingValue = false;
   }
 }
 
 describe('ProcessDailyClosureUseCase', () => {
-  it('should calculate consumption correctly: (initial_stock + total_entries) - physical_stock', async () => {
+  it('should calculate consumption correctly: current_stock - physical_stock', async () => {
     const mockRepo = new MockInventoryRepository();
-    mockRepo.setInitialStock(10);
-    mockRepo.setTotalEntries(90);
+    mockRepo.setCurrentStock(100); // Current stock = 100
     const useCase = new ProcessDailyClosureUseCase(mockRepo);
 
     const result = await useCase.execute({
@@ -85,25 +80,24 @@ describe('ProcessDailyClosureUseCase', () => {
     expect(result).toMatchObject({
       statusCode: 200,
       data: {
-        initialStock: 10,
-        totalEntries: 90,
+        initialStock: 100,
+        totalEntries: 0,
         physicalStock: 12,
         calculatedConsumption: 88.0,
       },
     });
   });
 
-  it('should fail with 422 when physical_stock exceeds available stock (logical inconsistency)', async () => {
+  it('should fail with 422 when physical_stock exceeds current stock (logical inconsistency)', async () => {
     const mockRepo = new MockInventoryRepository();
-    mockRepo.setInitialStock(10);
-    mockRepo.setTotalEntries(40); // Total available = 50
+    mockRepo.setCurrentStock(50); // Current stock = 50
     const useCase = new ProcessDailyClosureUseCase(mockRepo);
 
     await expect(
       useCase.execute({
         productId: 1,
         userId: '550e8400-e29b-41d4-a716-446655440000',
-        physicalStock: 60, // More than available (50)
+        physicalStock: 60, // More than current (50)
       })
     ).rejects.toMatchObject({
       statusCode: 422,
@@ -113,8 +107,7 @@ describe('ProcessDailyClosureUseCase', () => {
 
   it('should fail with 409 when closure already exists for product on current date', async () => {
     const mockRepo = new MockInventoryRepository();
-    mockRepo.setInitialStock(10);
-    mockRepo.setTotalEntries(90);
+    mockRepo.setCurrentStock(10);
     mockRepo.setHasExisting(true);
     const useCase = new ProcessDailyClosureUseCase(mockRepo);
 
@@ -132,8 +125,7 @@ describe('ProcessDailyClosureUseCase', () => {
 
   it('should fail with 400 for invalid input (negative physical_stock)', async () => {
     const mockRepo = new MockInventoryRepository();
-    mockRepo.setInitialStock(10);
-    mockRepo.setTotalEntries(90);
+    mockRepo.setCurrentStock(10);
     const useCase = new ProcessDailyClosureUseCase(mockRepo);
 
     await expect(
@@ -149,8 +141,7 @@ describe('ProcessDailyClosureUseCase', () => {
 
   it('should handle string input for physicalStock (HTML form sends strings)', async () => {
     const mockRepo = new MockInventoryRepository();
-    mockRepo.setInitialStock(10);
-    mockRepo.setTotalEntries(90);
+    mockRepo.setCurrentStock(100);
     const useCase = new ProcessDailyClosureUseCase(mockRepo);
 
     const result = await useCase.execute({
@@ -164,6 +155,26 @@ describe('ProcessDailyClosureUseCase', () => {
       data: {
         physicalStock: 38,
         calculatedConsumption: 62.0,
+      },
+    });
+  });
+
+  it('should handle string comparison bug: "75" vs 76 should pass', async () => {
+    const mockRepo = new MockInventoryRepository();
+    mockRepo.setCurrentStock(76); // Current stock = 76
+    const useCase = new ProcessDailyClosureUseCase(mockRepo);
+
+    const result = await useCase.execute({
+      productId: 1,
+      userId: '550e8400-e29b-41d4-a716-446655440000',
+      physicalStock: '75' as any, // String "75" < 76 should pass
+    });
+
+    expect(result).toMatchObject({
+      statusCode: 200,
+      data: {
+        physicalStock: 75,
+        calculatedConsumption: 1.0,
       },
     });
   });

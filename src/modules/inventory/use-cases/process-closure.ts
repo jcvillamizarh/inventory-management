@@ -36,39 +36,33 @@ export class ProcessDailyClosureUseCase {
       };
     }
 
-    // Get initial stock (from previous day's closure)
-    const initialStock = await this.inventoryRepository.getInitialStock(
-      validatedInput.productId,
-      currentDate
+    // Get current stock from latest physical stock (simplified logic)
+    const currentStock = await this.inventoryRepository.getLatestPhysicalStock(
+      validatedInput.productId
     );
 
-    // Get total entries for the current day
-    const totalEntries = await this.inventoryRepository.getTotalEntriesForDay(
-      validatedInput.productId,
-      currentDate
-    );
+    // Validate logical consistency: physical_stock cannot exceed current stock
+    // Explicitly convert to numbers to prevent string comparison bugs
+    const numPhysicalStock = Number(validatedInput.physicalStock);
+    const numCurrentStock = Number(currentStock);
 
-    // Calculate available stock
-    const availableStock = initialStock + totalEntries;
-
-    // Validate logical consistency: physical_stock cannot exceed available stock
-    if (validatedInput.physicalStock > availableStock) {
+    if (numPhysicalStock > numCurrentStock) {
       throw {
         statusCode: 422,
         message: 'Physical stock cannot exceed available stock',
       };
     }
 
-    // Calculate consumption: (initial_stock + total_entries) - physical_stock
-    const calculatedConsumption = availableStock - validatedInput.physicalStock;
+    // Calculate consumption: current_stock - physical_stock
+    const calculatedConsumption = currentStock - validatedInput.physicalStock;
 
     // Save closure to repository
     const closure = await this.inventoryRepository.saveClosure({
       productId: validatedInput.productId,
       userId: validatedInput.userId,
       closureDate: currentDate,
-      initialStock,
-      totalEntries,
+      initialStock: currentStock,
+      totalEntries: 0,
       physicalStock: validatedInput.physicalStock,
       calculatedConsumption,
     });

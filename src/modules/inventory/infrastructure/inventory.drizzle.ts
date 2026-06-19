@@ -46,14 +46,14 @@ export class DrizzleInventoryRepository implements IInventoryRepository {
   }
 
   async getInitialStock(productId: number, date: Date): Promise<number> {
-    // Get the most recent closure before or on the current date
+    // Get the most recent closure BEFORE the current date (not on the current date)
     const dateStr = date.toISOString().split('T')[0];
     const result = await db
       .select({ physicalStock: dailyClosures.physicalStock })
       .from(dailyClosures)
       .where(and(
         eq(dailyClosures.productId, productId),
-        lte(dailyClosures.closureDate, dateStr)
+        lt(dailyClosures.closureDate, dateStr)
       ))
       .orderBy(desc(dailyClosures.closureDate))
       .limit(1);
